@@ -1,0 +1,18 @@
+# netlify.toml
+# Place this at the root of your repository.
+
+[build]
+  publish   = "."          # folder containing your index.html
+  functions = "netlify/functions"
+
+# Redirect all /api/* requests to the function — keeps URLs tidy
+# and means you could add more functions later without changing the frontend.
+[[redirects]]
+  from   = "/api/airtable"
+  to     = "/.netlify/functions/airtable"
+  status = 200
+
+[[redirects]]
+  from   = "/api/airtable/*"
+  to     = "/.netlify/functions/airtable/:splat"
+  status = 200
