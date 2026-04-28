@@ -256,8 +256,8 @@
 
 
   /* Operator colour palette */
-  .op-Young   { background: #fde8f0; border-left-color: #c2185b !important; }
-  .op-Stanley { background: #e8f4fd; border-left-color: #1565c0 !important; }
+  .op-Young   { background: #e8f4fd; border-left-color: #1565c0 !important; }
+  .op-Stanley { background: #fde8f0; border-left-color: #c2185b !important; }
   .op-Mingli  { background: #f3e8fd; border-left-color: #6a1b9a !important; }
   .op-Tinghua { background: #e8fdf0; border-left-color: #1b5e20 !important; }
 
@@ -457,6 +457,7 @@
                 <option value="Antibody Screen">Antibody Screen</option>
                 <option value="Material Use Test">Material Use Test</option>
                 <option value="Control Sample">Control Sample</option>
+                <option value="Stability">Stability</option>
                 <option value="Other">Other</option>
               </select>
             </div>
@@ -796,8 +797,8 @@ function renderLegend() {
     '<div class="legend-item"><div class="legend-dot '+esc(ASSAY_COLORS[a.key])+'" style="background:currentColor;opacity:0.7"></div>'+esc(a.label)+'</div>'
   ).join('');
   const opLegend = [
-    {name:'Young',   bg:'#fde8f0', border:'#c2185b'},
-    {name:'Stanley', bg:'#e8f4fd', border:'#1565c0'},
+    {name:'Young',   bg:'#e8f4fd', border:'#1565c0'},
+    {name:'Stanley', bg:'#fde8f0', border:'#c2185b'},
     {name:'Mingli',  bg:'#f3e8fd', border:'#6a1b9a'},
     {name:'Tinghua', bg:'#e8fdf0', border:'#1b5e20'},
   ].map(o =>
