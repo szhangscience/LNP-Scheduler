@@ -907,7 +907,6 @@ function renderEntryCard(e, compact) {
   const teamLabel = e.team==='production' ? 'Production' : 'Analytical';
   const assayTags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
     .map(a=>`<span class="assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' (%EE)':''}</span>`).join('');
-  const safeId = esc(e.id);
   return `<div class="submission-card">
     <div class="sub-card-header">
       <div class="sub-avatar ${esc(teamCls)}">${esc(initials)}</div>
@@ -918,10 +917,10 @@ function renderEntryCard(e, compact) {
     <div class="sub-assays">${assayTags}</div>
     ${e.notes ? `<div class="sub-notes">"${esc(e.notes)}"</div>` : ''}
     <div class="sub-actions">
-      <button onclick="openViewModal(${JSON.stringify(e.id)})">&#128065; View</button>
-      <button onclick="openEditModal(${JSON.stringify(e.id)})">&#9998; Edit</button>
-      <button onclick="copySubmission(${JSON.stringify(e.id)})">&#128203; Copy</button>
-      <button class="del-btn" onclick="confirmDelete(${JSON.stringify(e.id)})">&#128465; Delete</button>
+      <button onclick="openViewModal('${e.id}')">&#128065; View</button>
+      <button onclick="openEditModal('${e.id}')">&#9998; Edit</button>
+      <button onclick="copySubmission('${e.id}')">&#128203; Copy</button>
+      <button class="del-btn" onclick="confirmDelete('${e.id}')">&#128465; Delete</button>
     </div>
   </div>`;
 }
