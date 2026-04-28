@@ -268,7 +268,7 @@
   <div id="app-scroll">
     <div id="loading-overlay">
       <div class="spinner"></div>
-      <div class="loading-text" id="loading-text">Loading submissions…</div>
+      <div class="loading-text" id="loading-text">Loading submissions...</div>
     </div>
 
     <!-- CALENDAR -->
@@ -326,7 +326,7 @@
                 <option value="30">Last 30 days</option>
                 <option value="90">Last 90 days</option>
                 <option value="365">Last 12 months</option>
-                <option value="custom">Custom…</option>
+                <option value="custom">Custom...</option>
               </select>
               <span id="assay-tf-custom" style="display:none;align-items:center;gap:5px;">
                 <input type="date" id="assay-tf-from" oninput="renderAssayBreakdown()">
@@ -412,10 +412,10 @@
 </div>
 
 <script>
-/* ─────────────────────────────────────────────
-   API — all calls go to the Netlify proxy.
+/* ---------------------------------------------
+   API -- all calls go to the Netlify proxy.
    No token, no base ID lives here.
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const API = '/api/airtable';
 
 async function apiFetch(path, opts = {}) {
@@ -430,9 +430,9 @@ async function apiFetch(path, opts = {}) {
   return res.json();
 }
 
-/* ─────────────────────────────────────────────
-   XSS helper — escape before inserting into HTML
-   ───────────────────────────────────────────── */
+/* ---------------------------------------------
+   XSS helper -- escape before inserting into HTML
+   --------------------------------------------- */
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -442,9 +442,9 @@ function esc(s) {
     .replace(/'/g, '&#39;');
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Input validation
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function validateEntry({ date, samples, operator }) {
   if (!date) return 'Date is required.';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'Invalid date format.';
@@ -455,9 +455,9 @@ function validateEntry({ date, samples, operator }) {
   return null;
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Constants
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const ASSAYS = [
   { key:'ribogreen',  label:'Ribogreen',   sub:'RNA quantification' },
   { key:'bca',        label:'BCA',         sub:'Protein quantification' },
@@ -477,9 +477,9 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MOS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    State
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 let data = [];
 let currentMonth = new Date().getMonth();
 let currentYear  = new Date().getFullYear();
@@ -489,12 +489,12 @@ let editingId = null;
 let panelDate = null;
 let viewingId = null;
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Sync indicator / loading / toast
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function setSyncState(s) {
   document.getElementById('sync-dot').className = 'sync-dot'+(s==='syncing'?' syncing':s==='error'?' error':'');
-  document.getElementById('sync-label').textContent = s==='syncing'?'Syncing…':s==='error'?'Sync error':'Synced';
+  document.getElementById('sync-label').textContent = s==='syncing'?'Syncing...':s==='error'?'Sync error':'Synced';
 }
 function showLoading(on, msg) {
   document.getElementById('loading-overlay').classList.toggle('hidden', !on);
@@ -506,9 +506,9 @@ function showToast(msg, isError) {
   setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-/* ─────────────────────────────────────────────
-   Data — maps Airtable records to local objects
-   ───────────────────────────────────────────── */
+/* ---------------------------------------------
+   Data -- maps Airtable records to local objects
+   --------------------------------------------- */
 function entryToFields(e) {
   return {
     submission_id: e.id,
@@ -547,7 +547,7 @@ async function loadAllRecords() {
 }
 
 async function refreshData() {
-  setSyncState('syncing'); showLoading(true, 'Loading submissions…');
+  setSyncState('syncing'); showLoading(true, 'Loading submissions...');
   try {
     data = (await loadAllRecords()).map(recordToEntry);
     setSyncState('ok');
@@ -565,9 +565,9 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 function dateStr(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtDate(ds) { if(!ds) return ''; const p=ds.split('-'); if(p.length<3) return ds; return MOS[parseInt(p[1])-1]+' '+parseInt(p[2])+', '+p[0]; }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Page switching
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function switchPage(p) {
   document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(el=>el.classList.remove('active'));
@@ -579,9 +579,9 @@ function switchPage(p) {
   if (p === 'summary')     renderSummary();
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Calendar view controls
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function setCalView(v) {
   calView = v;
   document.getElementById('toggle-month').classList.toggle('active', v==='month');
@@ -599,9 +599,9 @@ function goToday() {
   renderCalendar(); closePanel();
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Calendar rendering
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function renderCalendar() { calView === 'week' ? renderWeekCalendar() : renderMonthCalendar(); }
 
 function renderMonthCalendar() {
@@ -621,7 +621,7 @@ function renderMonthCalendar() {
 function renderWeekCalendar() {
   const end = new Date(weekStart); end.setDate(end.getDate()+6);
   const fmt = d => MOS[d.getMonth()]+' '+d.getDate();
-  document.getElementById('cal-title').textContent = fmt(weekStart)+' – '+fmt(end)+' '+weekStart.getFullYear();
+  document.getElementById('cal-title').textContent = fmt(weekStart)+' - '+fmt(end)+' '+weekStart.getFullYear();
   const grid = document.getElementById('cal-grid'); grid.className = 'week-grid'; grid.innerHTML = '';
   const today = new Date(); today.setHours(0,0,0,0);
   for (let i=0;i<7;i++) {
@@ -631,11 +631,11 @@ function renderWeekCalendar() {
     const isToday = date.getTime() === today.getTime();
     const col = document.createElement('div'); col.className = 'week-col'+(isToday?' today':'');
     const sl = totalSamples>0 ? totalSamples+' sample'+(totalSamples!==1?'s':'') : '';
-    col.innerHTML = `<div class="week-col-header" onclick="openPanel(new Date('${esc(ds)}T12:00:00'),data.filter(e=>e.date===${JSON.stringify(ds)}),'${esc(ds)}')">
+    col.innerHTML = `<div class="week-col-header" onclick="openPanel(new Date('${ds}T12:00:00'),data.filter(e=>e.date==='${ds}'),'${ds}')">
       <div class="wday">${esc(DAYS[date.getDay()])}</div><div class="wdate">${date.getDate()}</div>
       <div class="wsamples">${esc(sl)}</div></div>
-    <div class="week-col-body" id="wcol-${esc(ds)}"></div>
-    <button class="week-add-btn" onclick="openAddModal(${JSON.stringify(ds)})">+ Add</button>`;
+    <div class="week-col-body" id="wcol-${ds}"></div>
+    <button class="week-add-btn" onclick="openAddModal('${ds}')">+ Add</button>`;
     grid.appendChild(col);
     const body = col.querySelector('#wcol-'+ds);
     entries.forEach(e => {
@@ -644,7 +644,7 @@ function renderWeekCalendar() {
       const tags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
         .map(a=>`<span class="week-entry-assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}</span>`).join('');
       div.innerHTML = `<div class="week-entry-op">${esc(e.operator)}</div>
-        <div class="week-entry-detail">${esc(String(e.samples))} sample${e.samples!=1?'s':''} · ${e.team==='production'?'Prod':'Anal'}</div>
+        <div class="week-entry-detail">${esc(String(e.samples))} sample${e.samples!=1?'s':''} . ${e.team==='production'?'Prod':'Anal'}</div>
         <div class="week-entry-assays">${tags}</div>`;
       div.onclick = () => openViewModal(e.id);
       body.appendChild(div);
@@ -669,7 +669,7 @@ function makeCell(date, otherMonth) {
     if (Object.keys(allAssays).length > 4) html += `<span class="cal-more">+${Object.keys(allAssays).length-4} more</span>`;
     html += '</div>';
   }
-  if (totalSamples > 0) html += `<div class="cal-sample-count">${totalSamples} sample${totalSamples!==1?'s':''} · ${entries.length} sub${entries.length!==1?'s':''}</div>`;
+  if (totalSamples > 0) html += `<div class="cal-sample-count">${totalSamples} sample${totalSamples!==1?'s':''} . ${entries.length} sub${entries.length!==1?'s':''}</div>`;
   cell.innerHTML = html;
   cell.onclick = () => openPanel(date, entries, ds);
   return cell;
@@ -681,9 +681,9 @@ function renderLegend() {
   ).join('');
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    View modal
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function openViewModal(id) {
   const e = data.find(e=>e.id===id); if (!e) return;
   viewingId = id;
@@ -691,13 +691,13 @@ function openViewModal(id) {
   const teamLabel = e.team==='production' ? 'Production' : 'Analytical';
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const assayTags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
-    .map(a=>`<span class="view-assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' — %EE Only':''}</span>`).join('');
+    .map(a=>`<span class="view-assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' -- %EE Only':''}</span>`).join('');
   document.getElementById('view-modal-body').innerHTML = `
     <div class="view-hero">
       <div class="view-avatar ${esc(teamCls)}">${esc(initials)}</div>
       <div class="view-hero-info">
         <div class="view-operator">${esc(e.operator)}</div>
-        <div class="view-date">${esc(fmtDate(e.date))} &nbsp;·&nbsp; <span class="sub-team-badge ${esc(teamCls)}" style="font-size:11px;">${esc(teamLabel)}</span></div>
+        <div class="view-date">${esc(fmtDate(e.date))} &nbsp;.&nbsp; <span class="sub-team-badge ${esc(teamCls)}" style="font-size:11px;">${esc(teamLabel)}</span></div>
       </div>
     </div>
     <div class="view-fields">
@@ -735,15 +735,15 @@ async function confirmDeleteFromView(id) {
   } catch(e) { setSyncState('error'); showToast('Delete failed: '+e.message, true); }
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Day panel
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function openPanel(date, entries, ds) {
   panelDate = ds;
   document.getElementById('day-panel-title').textContent = DAYS[date.getDay()]+', '+MOS[date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
   const body = document.getElementById('day-panel-body');
   if (!entries.length) {
-    body.innerHTML = `<div class="empty-state" style="padding:30px 0;"><div class="empty-icon">&#128200;</div><p>No submissions for this day</p><br><button class="btn btn-primary" onclick="openAddModal(${JSON.stringify(ds)})">+ Add Submission</button></div>`;
+    body.innerHTML = `<div class="empty-state" style="padding:30px 0;"><div class="empty-icon">&#128200;</div><p>No submissions for this day</p><br><button class="btn btn-primary" onclick="openAddModal('${ds}')">+ Add Submission</button></div>`;
   } else {
     const totalSamples = entries.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
     const allAssays = {};
@@ -755,7 +755,7 @@ function openPanel(date, entries, ds) {
       Object.keys(allAssays).forEach(name => { const k=ASSAYS.find(a=>a.label===name)?.key; html+=`<span class="assay-tag ${esc(ASSAY_COLORS[k]||'')}">${esc(name)}</span>`; });
       html += `</div></div>`;
     }
-    html += `<br><button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="openAddModal(${JSON.stringify(ds)})">+ Add Submission</button>`;
+    html += `<br><button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="openAddModal('${ds}')">+ Add Submission</button>`;
     entries.forEach(e => { html += renderEntryCard(e, true); });
     body.innerHTML = html;
   }
@@ -763,9 +763,9 @@ function openPanel(date, entries, ds) {
 }
 function closePanel() { document.getElementById('day-panel').classList.remove('open'); panelDate = null; }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Add / Edit modal
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function buildAssayGrid() {
   document.getElementById('assay-grid').innerHTML = ASSAYS.map(a=>`
     <label class="assay-check" id="check-${a.key}">
@@ -844,7 +844,7 @@ async function saveEntry() {
   if (!ASSAYS.some(a => assays[a.key])) { showToast('Please select at least one assay.', true); return; }
 
   const saveBtn = document.getElementById('save-btn');
-  saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; setSyncState('syncing');
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; setSyncState('syncing');
   try {
     if (editingId) {
       const entry   = data.find(e=>e.id===editingId);
@@ -898,9 +898,9 @@ function confirmDelete(id) {
     .catch(e => { setSyncState('error'); showToast('Delete failed: '+e.message, true); });
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Entry card (list / panel views)
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function renderEntryCard(e, compact) {
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const teamCls   = e.team==='production' ? 'prod' : 'anal';
@@ -926,9 +926,9 @@ function renderEntryCard(e, compact) {
   </div>`;
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Submissions page
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function populateFilterDropdowns() {
   const ops = [...new Set(data.map(e=>e.operator))].sort();
   const opSel = document.getElementById('filter-operator'), cur = opSel.value;
@@ -961,9 +961,9 @@ function clearFilters() {
   renderSubmissions();
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Summary
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 function renderSummary() {
   const today = dateStr(new Date()), totalSubs = data.length;
   const totalSamples = data.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
@@ -1006,17 +1006,17 @@ function renderAssayBreakdown() {
     const to   = document.getElementById('assay-tf-to').value;
     if (from || to) {
       filtered = data.filter(e=>(from?e.date>=from:true)&&(to?e.date<=to:true));
-      if (from && to) labelText = `${fmtDate(from)} – ${fmtDate(to)} · ${filtered.length} submission${filtered.length!==1?'s':''}`;
-      else if (from)  labelText = `From ${fmtDate(from)} · ${filtered.length} submission${filtered.length!==1?'s':''}`;
-      else            labelText = `Up to ${fmtDate(to)} · ${filtered.length} submission${filtered.length!==1?'s':''}`;
+      if (from && to) labelText = `${fmtDate(from)} - ${fmtDate(to)} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
+      else if (from)  labelText = `From ${fmtDate(from)} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
+      else            labelText = `Up to ${fmtDate(to)} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
     }
   } else if (preset !== 'all') {
     const days    = parseInt(preset);
     const cutoff  = new Date(); cutoff.setDate(cutoff.getDate()-days);
     filtered      = data.filter(e=>e.date>=dateStr(cutoff));
-    labelText     = `Last ${days===365?'12 months':days+' days'} · ${filtered.length} submission${filtered.length!==1?'s':''}`;
+    labelText     = `Last ${days===365?'12 months':days+' days'} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
   } else {
-    labelText = filtered.length ? `All time · ${filtered.length} submission${filtered.length!==1?'s':''}` : '';
+    labelText = filtered.length ? `All time . ${filtered.length} submission${filtered.length!==1?'s':''}` : '';
   }
   const lbl = document.getElementById('assay-tf-label');
   if (lbl) lbl.textContent = labelText;
@@ -1031,9 +1031,9 @@ function renderAssayBreakdown() {
     </div>`).join('');
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    Init
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 buildAssayGrid();
 refreshData();
 </script>
