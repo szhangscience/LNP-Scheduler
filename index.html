@@ -1410,7 +1410,9 @@ function populateFilterDropdowns() {
   const opSel = document.getElementById('filter-operator'), cur = opSel.value;
   opSel.innerHTML = '<option value="">All operators</option>' + ops.map(o=>`<option value="${esc(o)}"${o===cur?' selected':''}>${esc(o)}</option>`).join('');
   const aSel = document.getElementById('filter-assay'), curA = aSel.value;
-  aSel.innerHTML = '<option value="">All assays</option>' + ASSAYS.map(a=>`<option value="${esc(a.key)}"${a.key===curA?' selected':''}>${esc(a.label)}</option>`).join('');
+  aSel.innerHTML = '<option value="">All assays</option>'
+    + '<optgroup label="Drug Product">' + ASSAYS.map(a=>'<option value="'+esc(a.key)+'"'+(a.key===curA?' selected':'')+'>'+esc(a.label)+'</option>').join('') + '</optgroup>'
+    + '<optgroup label="Drug Substance">' + DS_ASSAYS.map(a=>'<option value="'+esc(a.key)+'"'+(a.key===curA?' selected':'')+'>'+esc(a.label)+'</option>').join('') + '</optgroup>';
 }
 function renderSubmissions() {
   const team     = document.getElementById('filter-team').value;
