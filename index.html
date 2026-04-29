@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Analytical Samples Scheduler</title>
+<title>Analytical Sample Scheduler</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -312,7 +312,7 @@
 <body>
 <div id="app-root">
   <header>
-    <div class="logo">Analytical <span>Samples Scheduler</span></div>
+    <div class="logo">Analytical <span>Sample Scheduler</span></div>
     <div class="sync-indicator">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Synced</span>
@@ -997,8 +997,11 @@ function openViewModal(id) {
   const teamLabel = e.team==='production' ? 'Formulations' : e.team==='mrna' ? 'mRNA' : 'Analytical';
   const typeLabel = (e.submissiontype||'dp')==='ds' ? 'Drug Substance' : 'Drug Product';
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const assayTags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
-    .map(a=>`<span class="view-assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' -- %EE Only':''}</span>`).join('');
+  const viewIsDS = (e.submissiontype||'dp') === 'ds';
+  const viewAssayList = viewIsDS ? DS_ASSAYS : ASSAYS;
+  const viewColorMap  = viewIsDS ? DS_ASSAY_COLORS : ASSAY_COLORS;
+  const assayTags = viewAssayList.filter(a=>e.assays&&e.assays[a.key])
+    .map(a=>`<span class="view-assay-tag ${esc(viewColorMap[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' -- %EE Only':''}</span>`).join('');
   document.getElementById('view-modal-body').innerHTML = `
     <div class="view-hero">
       <div class="view-avatar ${esc(teamCls)}">${esc(initials)}</div>
@@ -1008,8 +1011,8 @@ function openViewModal(id) {
       </div>
     </div>
     <div class="view-fields">
-      <div class="view-field"><div class="view-field-label">LNP Samples</div><div class="view-field-value">${esc(String(e.samples))}</div></div>
-      <div class="view-field"><div class="view-field-label">Assays Requested</div><div class="view-field-value">${ASSAYS.filter(a=>e.assays&&e.assays[a.key]).length}</div></div>
+      <div class="view-field"><div class="view-field-label">${viewIsDS ? "DS Samples" : "LNP Samples"}</div><div class="view-field-value">${esc(String(e.samples))}</div></div>
+      <div class="view-field"><div class="view-field-label">Assays Requested</div><div class="view-field-value">${viewAssayList.filter(a=>e.assays&&e.assays[a.key]).length}</div></div>
     </div>
     <div class="view-section-label">Assays</div>
     <div class="view-assays">${assayTags||'<span style="font-size:13px;color:var(--text-hint);">None selected</span>'}</div>
@@ -1307,13 +1310,17 @@ function renderEntryCard(e, compact) {
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const teamCls   = e.team==='production' ? 'prod' : e.team==='mrna' ? 'mrna' : 'anal';
   const teamLabel = e.team==='production' ? 'Formulations' : e.team==='mrna' ? 'mRNA' : 'Analytical';
-  const assayTags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
-    .map(a=>`<span class="assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' (%EE)':''}</span>`).join('');
+  const isDS = (e.submissiontype||'dp') === 'ds';
+  const activeAssayList = isDS ? DS_ASSAYS : ASSAYS;
+  const activeColorMap  = isDS ? DS_ASSAY_COLORS : ASSAY_COLORS;
+  const typeTag = isDS ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#fef6e4;color:#7a4100;font-weight:600;margin-left:4px;">DS</span>' : '';
+  const assayTags = activeAssayList.filter(a=>e.assays&&e.assays[a.key])
+    .map(a=>`<span class="assay-tag ${esc(activeColorMap[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' (%EE)':''}</span>`).join('');
   return `<div class="submission-card">
     <div class="sub-card-header">
       <div class="sub-avatar ${esc(teamCls)}">${esc(initials)}</div>
       <div class="sub-info"><div class="sub-name">${esc(e.operator)}</div><div class="sub-meta">${esc(e.date)}</div></div>
-      <span class="sub-team-badge ${esc(teamCls)}">${esc(teamLabel)}</span>
+      <span class="sub-team-badge ${esc(teamCls)}">${esc(teamLabel)}</span>${typeTag}
     </div>
     <div style="margin-bottom:4px;"><span class="sub-samples">${esc(String(e.samples))}<span> samples</span></span></div>
     <div class="sub-assays">${assayTags}</div>
