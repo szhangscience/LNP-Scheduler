@@ -193,27 +193,36 @@
   .day-stat-value { font-weight: 600; }
 
   /* Submission cards */
-  .submission-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
-  .sub-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .sub-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .sub-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
   .sub-avatar.prod { background: var(--blue-bg); color: var(--blue-text); }
   .sub-avatar.anal { background: var(--teal-bg); color: var(--teal-text); }
-  .sub-info { flex: 1; }
-  .sub-name { font-size: 13px; font-weight: 600; }
-  .sub-meta { font-size: 11px; color: var(--text-sec); }
+  .sub-avatar.mrna { background: #e8eaf6; color: #283593; }
   .sub-team-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
   .sub-team-badge.prod { background: var(--blue-bg); color: var(--blue-text); }
   .sub-team-badge.anal { background: var(--teal-bg); color: var(--teal-text); }
-  .sub-samples { font-size: 20px; font-weight: 700; }
-  .sub-samples span { font-size: 12px; font-weight: 400; color: var(--text-sec); }
-  .sub-assays { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .sub-team-badge.mrna { background: #e8eaf6; color: #283593; }
   .assay-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
-  .sub-notes { font-size: 12px; color: var(--text-sec); margin-top: 6px; font-style: italic; }
-  .sub-actions { display: flex; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--border); }
-  .sub-actions button { font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer; border: 0.5px solid var(--border-med); background: var(--surface); color: var(--text-sec); }
-  .sub-actions button:hover { background: var(--surface2); }
-  .sub-actions .del-btn { color: var(--red-text); border-color: var(--red-border); }
-  .sub-actions .del-btn:hover { background: var(--red-bg); }
+  .sub-notes { font-size: 11px; color: var(--text-sec); font-style: italic; }
+
+  /* Compact submission table */
+  .sub-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .sub-table thead th { text-align: left; padding: 7px 10px; font-size: 10px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-med); background: var(--surface2); white-space: nowrap; }
+  .sub-table tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
+  .sub-table tbody tr:last-child { border-bottom: none; }
+  .sub-table tbody tr:hover { background: var(--surface2); }
+  .sub-table td { padding: 7px 10px; vertical-align: middle; }
+  .sub-table td.td-op { white-space: nowrap; }
+  .sub-table td.td-assays { max-width: 260px; }
+  .sub-table td.td-assays .assay-tags-wrap { display: flex; flex-wrap: wrap; gap: 3px; }
+  .sub-table td.td-meta { font-size: 11px; color: var(--text-sec); max-width: 180px; }
+  .sub-table td.td-actions { white-space: nowrap; text-align: right; }
+  .sub-table td.td-actions button { font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer; border: 0.5px solid var(--border-med); background: var(--surface); color: var(--text-sec); margin-left: 3px; }
+  .sub-table td.td-actions button:hover { background: var(--surface2); }
+  .sub-table td.td-actions .del-btn { color: var(--red-text); border-color: var(--red-border); }
+  .sub-table td.td-actions .del-btn:hover { background: var(--red-bg); }
+  .sub-op-row { display: flex; align-items: center; gap: 7px; }
+  .sub-op-name { font-weight: 600; font-size: 12px; }
+  .sub-op-date { font-size: 10px; color: var(--text-hint); }
 
   /* Submissions page */
   .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; align-items: center; }
@@ -1358,30 +1367,39 @@ function confirmDelete(id) {
 function renderEntryCard(e, compact) {
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const teamCls   = e.team==='production' ? 'prod' : e.team==='mrna' ? 'mrna' : 'anal';
-  const teamLabel = e.team==='production' ? 'Formulations' : e.team==='mrna' ? 'mRNA' : 'Analytical';
+  const teamLabel = e.team==='production' ? 'Form' : e.team==='mrna' ? 'mRNA' : 'Anal';
   const isDS = (e.submissiontype||'dp') === 'ds';
   const activeAssayList = isDS ? DS_ASSAYS : ASSAYS;
   const activeColorMap  = isDS ? DS_ASSAY_COLORS : ASSAY_COLORS;
-  const typeTag = isDS ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#fef6e4;color:#7a4100;font-weight:600;margin-left:4px;">DS</span>' : '';
+  const typeBadge = isDS
+    ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#fef6e4;color:#7a4100;font-weight:600;">DS</span>'
+    : '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:var(--blue-bg);color:var(--blue-text);font-weight:600;">DP</span>';
   const assayTags = activeAssayList.filter(a=>e.assays&&e.assays[a.key])
     .map(a=>`<span class="assay-tag ${esc(activeColorMap[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' (%EE)':''}</span>`).join('');
-  return `<div class="submission-card">
-    <div class="sub-card-header">
-      <div class="sub-avatar ${esc(teamCls)}">${esc(initials)}</div>
-      <div class="sub-info"><div class="sub-name">${esc(e.operator)}</div><div class="sub-meta">${esc(e.date)}</div></div>
-      <span class="sub-team-badge ${esc(teamCls)}">${esc(teamLabel)}</span>${typeTag}
-    </div>
-    <div style="margin-bottom:4px;"><span class="sub-samples">${esc(String(e.samples))}<span> samples</span></span></div>
-    <div class="sub-assays">${assayTags}</div>
-    ${e.lnpstage ? `<div class="sub-notes" style="font-style:normal;color:var(--text-sec);font-size:11px;">Stage: ${esc(e.lnpstage)}${e.projecttype?' | '+esc(e.projecttype):''}${e.batchid?' | '+esc(e.batchid):''}</div>` : e.projecttype ? `<div class="sub-notes" style="font-style:normal;color:var(--text-sec);font-size:11px;">${esc(e.projecttype)}${e.batchid?' | '+esc(e.batchid):''}</div>` : e.batchid ? `<div class="sub-notes" style="font-style:normal;color:var(--text-sec);font-size:11px;">${esc(e.batchid)}</div>` : ''}
-    ${e.notes ? `<div class="sub-notes">"${esc(e.notes)}"</div>` : ''}
-    <div class="sub-actions">
-      <button onclick="openViewModal('${e.id}')">&#128065; View</button>
-      <button onclick="openEditModal('${e.id}')">&#9998; Edit</button>
-      <button onclick="copySubmission('${e.id}')">&#128203; Copy</button>
-      <button class="del-btn" onclick="confirmDelete('${e.id}')">&#128465; Delete</button>
-    </div>
-  </div>`;
+  const stageMeta = isDS ? esc(e.dsstage||'') : esc(e.lnpstage||'');
+  const metaParts = [stageMeta, esc(e.projecttype||''), esc(e.batchid||'')].filter(Boolean).join(' | ');
+  const notesPart = e.notes ? `<div class="sub-notes" style="margin-top:2px;">"${esc(e.notes)}"</div>` : '';
+  return `<tr>
+    <td class="td-op">
+      <div class="sub-op-row">
+        <div class="sub-avatar ${esc(teamCls)}">${esc(initials)}</div>
+        <div>
+          <div class="sub-op-name">${esc(e.operator)}</div>
+          <div class="sub-op-date">${esc(e.date)}</div>
+        </div>
+      </div>
+    </td>
+    <td style="white-space:nowrap;">${typeBadge} <span class="sub-team-badge ${esc(teamCls)}">${esc(teamLabel)}</span></td>
+    <td style="font-weight:600;font-size:13px;">${esc(String(e.samples))}<span style="font-size:10px;font-weight:400;color:var(--text-sec);"> smp</span></td>
+    <td class="td-assays"><div class="assay-tags-wrap">${assayTags}</div></td>
+    <td class="td-meta">${metaParts}${notesPart}</td>
+    <td class="td-actions">
+      <button onclick="openViewModal('${e.id}')">View</button>
+      <button onclick="openEditModal('${e.id}')">Edit</button>
+      <button onclick="copySubmission('${e.id}')">Copy</button>
+      <button class="del-btn" onclick="confirmDelete('${e.id}')">Del</button>
+    </td>
+  </tr>`;
 }
 
 /* ---------------------------------------------
@@ -1410,8 +1428,13 @@ function renderSubmissions() {
   }).sort((a,b) => b.date.localeCompare(a.date));
   document.getElementById('submissions-list').innerHTML = !filtered.length
     ? `<div class="empty-state"><div class="empty-icon">&#128202;</div><p>No submissions found.</p></div>`
-    : `<p style="font-size:12px;color:var(--text-sec);margin-bottom:10px;">${filtered.length} submission${filtered.length!==1?'s':''} found</p>`
-      + filtered.map(e => renderEntryCard(e, false)).join('');
+    : `<p style="font-size:12px;color:var(--text-sec);margin-bottom:8px;">${filtered.length} submission${filtered.length!==1?'s':''} found</p>`
+      + `<div style="border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">`
+      + `<table class="sub-table"><thead><tr>`
+      + `<th>Operator</th><th>Type</th><th>Samples</th><th>Assays</th><th>Details</th><th></th>`
+      + `</tr></thead><tbody>`
+      + filtered.map(e => renderEntryCard(e, false)).join('')
+      + `</tbody></table></div>`;
 }
 function clearFilters() {
   ['filter-team','filter-operator','filter-assay'].forEach(id => document.getElementById(id).value='');
@@ -1482,7 +1505,10 @@ function renderSummary() {
   const next14 = new Date(); next14.setDate(next14.getDate()+14);
   const upcomingEntries = data.filter(e=>e.date>=today&&e.date<=dateStr(next14)).sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('upcoming-list').innerHTML = upcomingEntries.length
-    ? upcomingEntries.map(e=>renderEntryCard(e,false)).join('')
+    ? `<div style="border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;">`
+      + `<table class="sub-table"><thead><tr><th>Operator</th><th>Type</th><th>Samples</th><th>Assays</th><th>Details</th><th></th></tr></thead><tbody>`
+      + upcomingEntries.map(e=>renderEntryCard(e,false)).join('')
+      + `</tbody></table></div>`
     : '<p style="color:var(--text-sec);font-size:13px;">No upcoming submissions in the next 14 days.</p>';
 }
 
