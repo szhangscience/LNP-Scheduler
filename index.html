@@ -259,7 +259,8 @@
   .op-Young   { background: #e8f4fd; border-left-color: #1565c0 !important; }
   .op-Stanley { background: #fde8f0; border-left-color: #c2185b !important; }
   .op-Mingli  { background: #f3e8fd; border-left-color: #6a1b9a !important; }
-  .op-Tinghua { background: #e8fdf0; border-left-color: #1b5e20 !important; }
+  .op-Tinghua   { background: #e8fdf0; border-left-color: #1b5e20 !important; }
+  .op-Christian { background: #fff3e0; border-left-color: #e65100 !important; }
 
   /* EE-only assay tag */
   .assay-EEOnly { background: #fff3cd; color: #7b4f00; }
@@ -418,8 +419,23 @@
 
         <!-- Assay frequency: DS -->
         <div class="card-section" style="border-top:3px solid #9c6e00;">
-          <div class="section-title">
+          <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <span style="color:#7a4100;">DS Assay Frequency</span>
+            <div class="assay-tf-row">
+              <select id="assay-tf-preset-ds" onchange="onAssayTfChangeDs()">
+                <option value="all">All time</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 12 months</option>
+                <option value="custom">Custom...</option>
+              </select>
+              <span id="assay-tf-custom-ds" style="display:none;align-items:center;gap:5px;">
+                <input type="date" id="assay-tf-from-ds" oninput="renderAssayBreakdown()">
+                <span style="font-size:11px;color:var(--text-sec);">to</span>
+                <input type="date" id="assay-tf-to-ds" oninput="renderAssayBreakdown()">
+              </span>
+            </div>
           </div>
           <div id="assay-tf-label-ds" style="font-size:11px;color:var(--text-hint);margin-bottom:8px;"></div>
           <div id="assay-breakdown-ds"></div>
@@ -512,6 +528,7 @@
                   <option value="Stanley">Stanley</option>
                   <option value="Mingli">Mingli</option>
                   <option value="Tinghua">Tinghua</option>
+                  <option value="Christian">Christian</option>
                 </select>
               </div>
               <div class="form-row"><label>Team *</label>
@@ -1014,7 +1031,8 @@ function renderLegend() {
     {name:'Young',   bg:'#e8f4fd', border:'#1565c0'},
     {name:'Stanley', bg:'#fde8f0', border:'#c2185b'},
     {name:'Mingli',  bg:'#f3e8fd', border:'#6a1b9a'},
-    {name:'Tinghua', bg:'#e8fdf0', border:'#1b5e20'},
+    {name:'Tinghua',   bg:'#e8fdf0', border:'#1b5e20'},
+    {name:'Christian', bg:'#fff3e0', border:'#e65100'},
   ].map(o =>
     '<div class="legend-item"><div class="op-legend-dot" style="background:'+o.bg+';border:2px solid '+o.border+';border-radius:3px;width:12px;height:9px;"></div>'+o.name+'</div>'
   ).join('');
@@ -1480,34 +1498,55 @@ function onAssayTfChange() {
   if (preset !== 'custom') renderAssayBreakdown();
 }
 
+function onAssayTfChangeDs() {
+  const preset = document.getElementById('assay-tf-preset-ds').value;
+  document.getElementById('assay-tf-custom-ds').style.display = preset === 'custom' ? 'flex' : 'none';
+  if (preset !== 'custom') renderAssayBreakdown();
+}
+
 function renderAssayBreakdown() {
+  // DP filter
   const preset = document.getElementById('assay-tf-preset')?.value || 'all';
-  let baseFiltered = data, labelText = '';
+  let dpFiltered = data.filter(e=>(e.submissiontype||'dp')==='dp'), dpLabel = '';
   if (preset === 'custom') {
     const from = document.getElementById('assay-tf-from').value;
     const to   = document.getElementById('assay-tf-to').value;
     if (from || to) {
-      baseFiltered = data.filter(e=>(from?e.date>=from:true)&&(to?e.date<=to:true));
-      if (from && to) labelText = `${fmtDate(from)} - ${fmtDate(to)}`;
-      else if (from)  labelText = `From ${fmtDate(from)}`;
-      else            labelText = `Up to ${fmtDate(to)}`;
+      dpFiltered = dpFiltered.filter(e=>(from?e.date>=from:true)&&(to?e.date<=to:true));
+      if (from && to) dpLabel = fmtDate(from)+' - '+fmtDate(to);
+      else if (from)  dpLabel = 'From '+fmtDate(from);
+      else            dpLabel = 'Up to '+fmtDate(to);
     }
   } else if (preset !== 'all') {
     const days   = parseInt(preset);
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-days);
-    baseFiltered = data.filter(e=>e.date>=dateStr(cutoff));
-    labelText    = `Last ${days===365?'12 months':days+' days'}`;
-  } else {
-    labelText = 'All time';
-  }
+    dpFiltered   = dpFiltered.filter(e=>e.date>=dateStr(cutoff));
+    dpLabel      = 'Last '+(days===365?'12 months':days+' days');
+  } else { dpLabel = 'All time'; }
 
-  const dpFiltered = baseFiltered.filter(e=>(e.submissiontype||'dp')==='dp');
-  const dsFiltered = baseFiltered.filter(e=>e.submissiontype==='ds');
+  // DS filter (independent)
+  const presetDs = document.getElementById('assay-tf-preset-ds')?.value || 'all';
+  let dsFiltered = data.filter(e=>e.submissiontype==='ds'), dsLabel = '';
+  if (presetDs === 'custom') {
+    const from = document.getElementById('assay-tf-from-ds')?.value || '';
+    const to   = document.getElementById('assay-tf-to-ds')?.value || '';
+    if (from || to) {
+      dsFiltered = dsFiltered.filter(e=>(from?e.date>=from:true)&&(to?e.date<=to:true));
+      if (from && to) dsLabel = fmtDate(from)+' - '+fmtDate(to);
+      else if (from)  dsLabel = 'From '+fmtDate(from);
+      else            dsLabel = 'Up to '+fmtDate(to);
+    }
+  } else if (presetDs !== 'all') {
+    const days   = parseInt(presetDs);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-days);
+    dsFiltered   = dsFiltered.filter(e=>e.date>=dateStr(cutoff));
+    dsLabel      = 'Last '+(days===365?'12 months':days+' days');
+  } else { dsLabel = 'All time'; }
 
   const lbl = document.getElementById('assay-tf-label');
-  if (lbl) lbl.textContent = labelText + ' . ' + dpFiltered.length + ' submission' + (dpFiltered.length!==1?'s':'');
+  if (lbl) lbl.textContent = dpLabel + ' . ' + dpFiltered.length + ' submission' + (dpFiltered.length!==1?'s':'');
   const lblDs = document.getElementById('assay-tf-label-ds');
-  if (lblDs) lblDs.textContent = labelText + ' . ' + dsFiltered.length + ' submission' + (dsFiltered.length!==1?'s':'');
+  if (lblDs) lblDs.textContent = dsLabel + ' . ' + dsFiltered.length + ' submission' + (dsFiltered.length!==1?'s':'');
 
   function buildBreakdown(subset, assayList, colorMap, elId) {
     const counts = {}; assayList.forEach(a=>counts[a.key]=0);
