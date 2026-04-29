@@ -375,11 +375,27 @@
     <!-- SUMMARY -->
     <div id="page-summary" class="page">
       <h2 style="font-size:17px;font-weight:600;margin-bottom:14px;">Summary &amp; Analytics</h2>
+
+      <!-- Top-level stat cards -->
       <div class="stats-grid" id="stats-grid"></div>
+
+      <!-- DP / DS split stat rows -->
+      <div class="two-col" style="margin-bottom:16px;">
+        <div class="card-section" style="border-top:3px solid var(--blue-border);">
+          <div style="font-size:11px;font-weight:700;color:var(--blue-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Drug Product</div>
+          <div class="stats-grid" id="stats-grid-dp" style="margin-bottom:0;"></div>
+        </div>
+        <div class="card-section" style="border-top:3px solid #9c6e00;">
+          <div style="font-size:11px;font-weight:700;color:#7a4100;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Drug Substance</div>
+          <div class="stats-grid" id="stats-grid-ds" style="margin-bottom:0;"></div>
+        </div>
+      </div>
+
+      <!-- Assay frequency: DP -->
       <div class="two-col">
-        <div class="card-section">
+        <div class="card-section" style="border-top:3px solid var(--blue-border);">
           <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-            Assay Request Frequency
+            <span style="color:var(--blue-text);">DP Assay Frequency</span>
             <div class="assay-tf-row">
               <select id="assay-tf-preset" onchange="onAssayTfChange()">
                 <option value="all">All time</option>
@@ -397,10 +413,31 @@
             </div>
           </div>
           <div id="assay-tf-label" style="font-size:11px;color:var(--text-hint);margin-bottom:8px;"></div>
-          <div id="assay-breakdown"></div>
+          <div id="assay-breakdown-dp"></div>
         </div>
-        <div class="card-section"><div class="section-title">Submissions by Operator</div><div id="operator-breakdown"></div></div>
+
+        <!-- Assay frequency: DS -->
+        <div class="card-section" style="border-top:3px solid #9c6e00;">
+          <div class="section-title">
+            <span style="color:#7a4100;">DS Assay Frequency</span>
+          </div>
+          <div id="assay-tf-label-ds" style="font-size:11px;color:var(--text-hint);margin-bottom:8px;"></div>
+          <div id="assay-breakdown-ds"></div>
+        </div>
       </div>
+
+      <!-- Operator breakdown: DP + DS side by side -->
+      <div class="two-col">
+        <div class="card-section" style="border-top:3px solid var(--blue-border);">
+          <div class="section-title" style="color:var(--blue-text);">DP Submissions by Operator</div>
+          <div id="operator-breakdown-dp"></div>
+        </div>
+        <div class="card-section" style="border-top:3px solid #9c6e00;">
+          <div class="section-title" style="color:#7a4100;">DS Submissions by Operator</div>
+          <div id="operator-breakdown-ds"></div>
+        </div>
+      </div>
+
       <div class="card-section" style="margin-bottom:20px;">
         <div class="section-title">Upcoming (next 14 days)</div>
         <div id="upcoming-list"></div>
@@ -1374,28 +1411,64 @@ function clearFilters() {
    Summary
    --------------------------------------------- */
 function renderSummary() {
-  const today = dateStr(new Date()), totalSubs = data.length;
+  const today  = dateStr(new Date());
+  const dpData = data.filter(e=>(e.submissiontype||'dp')==='dp');
+  const dsData = data.filter(e=>e.submissiontype==='ds');
+
+  // ── Top-level stats ──
+  const totalSubs    = data.length;
   const totalSamples = data.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
-  const operators = new Set(data.map(e=>e.operator)).size;
-  const upcoming  = data.filter(e=>e.date>=today).length;
+  const operators    = new Set(data.map(e=>e.operator)).size;
+  const upcoming     = data.filter(e=>e.date>=today).length;
   document.getElementById('stats-grid').innerHTML = [
-    { label:'Total Submissions',  value:totalSubs,     sub:'all time' },
-    { label:'Total LNP Samples',  value:totalSamples,  sub:'across all submissions' },
-    { label:'Active Operators',   value:operators,     sub:'unique' },
-    { label:'Upcoming',           value:upcoming,      sub:'from today' },
+    { label:'Total Submissions', value:totalSubs,     sub:'DP + DS' },
+    { label:'Total Samples',     value:totalSamples,  sub:'across all submissions' },
+    { label:'Active Operators',  value:operators,     sub:'unique' },
+    { label:'Upcoming',          value:upcoming,      sub:'from today' },
   ].map(s=>`<div class="stat-card"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.value}</div><div class="stat-sub">${esc(s.sub)}</div></div>`).join('');
+
+  // ── DP stat mini-cards ──
+  const dpSamples  = dpData.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
+  const dpUpcoming = dpData.filter(e=>e.date>=today).length;
+  document.getElementById('stats-grid-dp').innerHTML = [
+    { label:'Submissions', value:dpData.length,  sub:'drug product' },
+    { label:'Samples',     value:dpSamples,       sub:'LNP samples' },
+    { label:'Upcoming',    value:dpUpcoming,      sub:'from today' },
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.value}</div><div class="stat-sub">${esc(s.sub)}</div></div>`).join('');
+
+  // ── DS stat mini-cards ──
+  const dsSamples  = dsData.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
+  const dsUpcoming = dsData.filter(e=>e.date>=today).length;
+  document.getElementById('stats-grid-ds').innerHTML = [
+    { label:'Submissions', value:dsData.length,  sub:'drug substance' },
+    { label:'Samples',     value:dsSamples,       sub:'DS samples' },
+    { label:'Upcoming',    value:dsUpcoming,      sub:'from today' },
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.value}</div><div class="stat-sub">${esc(s.sub)}</div></div>`).join('');
+
+  // ── Assay breakdowns ──
   renderAssayBreakdown();
-  const opStats = {};
-  data.forEach(e => { if(!opStats[e.operator]) opStats[e.operator]={team:e.team,subs:0,samples:0}; opStats[e.operator].subs++; opStats[e.operator].samples+=parseInt(e.samples)||0; });
-  const sorted = Object.entries(opStats).sort((a,b)=>b[1].subs-a[1].subs);
-  document.getElementById('operator-breakdown').innerHTML = !sorted.length
-    ? '<p style="color:var(--text-sec);font-size:13px;">No data yet.</p>'
-    : `<table class="operator-table"><thead><tr><th>Operator</th><th>Team</th><th>Subs</th><th>Samples</th></tr></thead><tbody>`
-      + sorted.map(([name,s])=>`<tr><td><strong>${esc(name)}</strong></td><td><span class="sub-team-badge ${s.team==='production'?'prod':'anal'}">${s.team==='production' ? 'Formulations' : s.team==='mrna' ? 'mRNA' : 'Analytical'}</span></td><td>${s.subs}</td><td>${s.samples}</td></tr>`).join('')
-      + `</tbody></table>`;
+
+  // ── Operator breakdowns ──
+  function buildOpTable(subset, elId) {
+    const opStats = {};
+    subset.forEach(e => {
+      if (!opStats[e.operator]) opStats[e.operator] = { team:e.team, subs:0, samples:0 };
+      opStats[e.operator].subs++;
+      opStats[e.operator].samples += parseInt(e.samples)||0;
+    });
+    const sorted = Object.entries(opStats).sort((a,b)=>b[1].subs-a[1].subs);
+    document.getElementById(elId).innerHTML = !sorted.length
+      ? '<p style="color:var(--text-sec);font-size:13px;">No data yet.</p>'
+      : `<table class="operator-table"><thead><tr><th>Operator</th><th>Team</th><th>Subs</th><th>Samples</th></tr></thead><tbody>`
+        + sorted.map(([name,s])=>`<tr><td><strong>${esc(name)}</strong></td><td><span class="sub-team-badge ${s.team==='production'?'prod':s.team==='mrna'?'mrna':'anal'}">${s.team==='production'?'Formulations':s.team==='mrna'?'mRNA':'Analytical'}</span></td><td>${s.subs}</td><td>${s.samples}</td></tr>`).join('')
+        + `</tbody></table>`;
+  }
+  buildOpTable(dpData, 'operator-breakdown-dp');
+  buildOpTable(dsData, 'operator-breakdown-ds');
+
+  // ── Upcoming ──
   const next14 = new Date(); next14.setDate(next14.getDate()+14);
-  const today2 = dateStr(new Date());
-  const upcomingEntries = data.filter(e=>e.date>=today2&&e.date<=dateStr(next14)).sort((a,b)=>a.date.localeCompare(b.date));
+  const upcomingEntries = data.filter(e=>e.date>=today&&e.date<=dateStr(next14)).sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('upcoming-list').innerHTML = upcomingEntries.length
     ? upcomingEntries.map(e=>renderEntryCard(e,false)).join('')
     : '<p style="color:var(--text-sec);font-size:13px;">No upcoming submissions in the next 14 days.</p>';
@@ -1409,35 +1482,49 @@ function onAssayTfChange() {
 
 function renderAssayBreakdown() {
   const preset = document.getElementById('assay-tf-preset')?.value || 'all';
-  let filtered = data, labelText = '';
+  let baseFiltered = data, labelText = '';
   if (preset === 'custom') {
     const from = document.getElementById('assay-tf-from').value;
     const to   = document.getElementById('assay-tf-to').value;
     if (from || to) {
-      filtered = data.filter(e=>(from?e.date>=from:true)&&(to?e.date<=to:true));
-      if (from && to) labelText = `${fmtDate(from)} - ${fmtDate(to)} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
-      else if (from)  labelText = `From ${fmtDate(from)} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
-      else            labelText = `Up to ${fmtDate(to)} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
+      baseFiltered = data.filter(e=>(from?e.date>=from:true)&&(to?e.date<=to:true));
+      if (from && to) labelText = `${fmtDate(from)} - ${fmtDate(to)}`;
+      else if (from)  labelText = `From ${fmtDate(from)}`;
+      else            labelText = `Up to ${fmtDate(to)}`;
     }
   } else if (preset !== 'all') {
-    const days    = parseInt(preset);
-    const cutoff  = new Date(); cutoff.setDate(cutoff.getDate()-days);
-    filtered      = data.filter(e=>e.date>=dateStr(cutoff));
-    labelText     = `Last ${days===365?'12 months':days+' days'} . ${filtered.length} submission${filtered.length!==1?'s':''}`;
+    const days   = parseInt(preset);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-days);
+    baseFiltered = data.filter(e=>e.date>=dateStr(cutoff));
+    labelText    = `Last ${days===365?'12 months':days+' days'}`;
   } else {
-    labelText = filtered.length ? `All time . ${filtered.length} submission${filtered.length!==1?'s':''}` : '';
+    labelText = 'All time';
   }
+
+  const dpFiltered = baseFiltered.filter(e=>(e.submissiontype||'dp')==='dp');
+  const dsFiltered = baseFiltered.filter(e=>e.submissiontype==='ds');
+
   const lbl = document.getElementById('assay-tf-label');
-  if (lbl) lbl.textContent = labelText;
-  const assayCounts = {}; ASSAYS.forEach(a=>assayCounts[a.key]=0);
-  filtered.forEach(e=>ASSAYS.forEach(a=>{if(e.assays&&e.assays[a.key])assayCounts[a.key]+=(parseInt(e.samples)||0);}));
-  const maxAssay = Math.max(...Object.values(assayCounts), 1);
-  document.getElementById('assay-breakdown').innerHTML = ASSAYS.map(a=>`
-    <div class="assay-summary-row">
-      <span class="assay-name"><span class="assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}</span></span>
-      <div class="assay-bar-wrap"><div class="assay-bar" style="width:${Math.round(assayCounts[a.key]/maxAssay*100)}%"></div></div>
-      <span class="assay-count">${assayCounts[a.key]}</span>
-    </div>`).join('');
+  if (lbl) lbl.textContent = labelText + ' . ' + dpFiltered.length + ' submission' + (dpFiltered.length!==1?'s':'');
+  const lblDs = document.getElementById('assay-tf-label-ds');
+  if (lblDs) lblDs.textContent = labelText + ' . ' + dsFiltered.length + ' submission' + (dsFiltered.length!==1?'s':'');
+
+  function buildBreakdown(subset, assayList, colorMap, elId) {
+    const counts = {}; assayList.forEach(a=>counts[a.key]=0);
+    subset.forEach(e=>assayList.forEach(a=>{ if(e.assays&&e.assays[a.key]) counts[a.key]+=(parseInt(e.samples)||0); }));
+    const maxVal = Math.max(...Object.values(counts), 1);
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = assayList.map(a=>`
+      <div class="assay-summary-row">
+        <span class="assay-name"><span class="assay-tag ${esc(colorMap[a.key])}">${esc(a.label)}</span></span>
+        <div class="assay-bar-wrap"><div class="assay-bar" style="width:${Math.round(counts[a.key]/maxVal*100)}%"></div></div>
+        <span class="assay-count">${counts[a.key]}</span>
+      </div>`).join('');
+  }
+
+  buildBreakdown(dpFiltered, ASSAYS,    ASSAY_COLORS,    'assay-breakdown-dp');
+  buildBreakdown(dsFiltered, DS_ASSAYS, DS_ASSAY_COLORS, 'assay-breakdown-ds');
 }
 
 /* ---------------------------------------------
