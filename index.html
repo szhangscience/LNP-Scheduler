@@ -258,8 +258,6 @@
   /* Operator colour palette */
   .op-Young   { background: #e8f4fd; border-left-color: #1565c0 !important; }
   .op-Stanley { background: #fde8f0; border-left-color: #c2185b !important; }
-  .op-Mingli  { background: #f3e8fd; border-left-color: #6a1b9a !important; }
-  .op-Tinghua   { background: #e8fdf0; border-left-color: #1b5e20 !important; }
   .op-Christian { background: #fff3e0; border-left-color: #e65100 !important; }
 
   /* EE-only assay tag */
@@ -526,8 +524,6 @@
                   <option value="">Select operator...</option>
                   <option value="Young">Young</option>
                   <option value="Stanley">Stanley</option>
-                  <option value="Mingli">Mingli</option>
-                  <option value="Tinghua">Tinghua</option>
                   <option value="Christian">Christian</option>
                 </select>
               </div>
@@ -1030,8 +1026,6 @@ function renderLegend() {
   const opLegend = [
     {name:'Young',   bg:'#e8f4fd', border:'#1565c0'},
     {name:'Stanley', bg:'#fde8f0', border:'#c2185b'},
-    {name:'Mingli',  bg:'#f3e8fd', border:'#6a1b9a'},
-    {name:'Tinghua',   bg:'#e8fdf0', border:'#1b5e20'},
     {name:'Christian', bg:'#fff3e0', border:'#e65100'},
   ].map(o =>
     '<div class="legend-item"><div class="op-legend-dot" style="background:'+o.bg+';border:2px solid '+o.border+';border-radius:3px;width:12px;height:9px;"></div>'+o.name+'</div>'
