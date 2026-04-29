@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LNP Sample Submission Scheduler</title>
+<title>Analytical Samples Scheduler</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -270,6 +270,38 @@
   /* Optional field label */
   .label-optional { font-size: 10px; font-weight: 400; color: var(--text-hint); margin-left: 4px; text-transform: none; letter-spacing: 0; }
 
+
+  /* Submission type selector step */
+  .type-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+  .type-card { flex: 1; border: 2px solid var(--border-med); border-radius: var(--radius-lg); padding: 16px 14px; cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
+  .type-card:hover { background: var(--surface2); }
+  .type-card.selected { border-color: var(--blue-border); background: var(--blue-bg); }
+  .type-card .type-icon { font-size: 24px; margin-bottom: 6px; }
+  .type-card .type-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .type-card .type-sub { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+  .form-step { display: none; }
+  .form-step.active { display: block; }
+
+  /* DS assay colours */
+  .assay-DotPlot  { background: #fef3e2; color: #7a4100; }
+  .assay-IPRP     { background: #e8f5e9; color: #1b5e20; }
+  .assay-OD260    { background: #fce4ec; color: #880e4f; }
+  .assay-PolyA    { background: #e8eaf6; color: #283593; }
+  .assay-FiveCap  { background: #e0f7fa; color: #006064; }
+
+  /* Split week calendar */
+  .week-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 8px; background: var(--surface2); border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border); color: var(--text-sec); display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 1px; }
+  .week-section-label span { padding: 3px 5px; font-size: 10px; font-weight: 700; color: var(--text-sec); }
+  .week-section-dp { border-top: 3px solid var(--blue-border); }
+  .week-section-ds { border-top: 3px solid #7b4f00; }
+  .ds-col-body { padding: 5px; display: flex; flex-direction: column; gap: 4px; min-height: 80px; }
+  .week-entry-ds { padding: 6px 8px; border-radius: 6px; border-left: 3px solid #7b4f00; background: #fef9f0; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+  .week-entry-ds:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+
+  /* mRNA team badge */
+  .sub-team-badge.mrna { background: #e8eaf6; color: #283593; }
+  .sub-avatar.mrna { background: #e8eaf6; color: #283593; }
+
   @media (max-width: 680px) {
     .two-col, .form-grid2, .view-fields { grid-template-columns: 1fr; }
     .assay-grid { grid-template-columns: 1fr; }
@@ -280,7 +312,7 @@
 <body>
 <div id="app-root">
   <header>
-    <div class="logo">LNP <span>Sample Scheduler</span></div>
+    <div class="logo">Analytical <span>Samples Scheduler</span></div>
     <div class="sync-indicator">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Synced</span>
@@ -326,6 +358,7 @@
           <option value="">All teams</option>
           <option value="production">Formulations</option>
           <option value="analytical">Analytical</option>
+          <option value="mrna">mRNA</option>
         </select>
         <label>Operator:</label>
         <select id="filter-operator" onchange="renderSubmissions()"><option value="">All operators</option></select>
@@ -408,65 +441,104 @@
           <button class="modal-close" onclick="closeModal()">&#x2715;</button>
         </div>
         <div class="modal-body">
-          <div class="form-grid2">
-            <div class="form-row"><label>Date *</label><input type="date" id="f-date" required></div>
-            <div class="form-row"><label>Number of LNP Samples *</label><input type="number" id="f-samples" min="1" max="999" placeholder="e.g. 6" required></div>
-          </div>
-          <div class="form-grid2">
-            <div class="form-row"><label>Operator *</label>
-              <select id="f-operator" required>
-                <option value="">Select operator...</option>
-                <option value="Young">Young</option>
-                <option value="Stanley">Stanley</option>
-                <option value="Mingli">Mingli</option>
-                <option value="Tinghua">Tinghua</option>
-              </select>
+          <!-- Step 1: Type selector -->
+          <div class="form-step active" id="step-type">
+            <p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">What type of sample are you submitting?</p>
+            <div class="type-selector">
+              <div class="type-card selected" id="type-card-dp" onclick="selectSubmissionType('dp')">
+                <div class="type-icon">&#128138;</div>
+                <div class="type-label">Drug Product</div>
+                <div class="type-sub">LNP formulations</div>
+              </div>
+              <div class="type-card" id="type-card-ds" onclick="selectSubmissionType('ds')">
+                <div class="type-icon">&#129516;</div>
+                <div class="type-label">Drug Substance</div>
+                <div class="type-sub">mRNA / nucleic acid</div>
+              </div>
             </div>
-            <div class="form-row"><label>Team *</label>
-              <select id="f-team"><option value="production">Formulations</option><option value="analytical">Analytical</option></select>
-            </div>
-          </div>
-          <div class="form-row">
-            <label>Assays Requested *</label>
-            <div class="assay-grid" id="assay-grid"></div>
-            <div class="ee-option" id="ee-option">
-              <label><input type="checkbox" id="f-ee-only"> %EE Only (Encapsulation Efficiency, no total RNA)</label>
+            <div style="display:flex;justify-content:flex-end;">
+              <button class="btn btn-primary" onclick="goToFormStep()">Next &rarr;</button>
             </div>
           </div>
-          <div class="form-grid2">
+
+          <!-- Step 2: Form fields -->
+          <div class="form-step" id="step-form">
+            <div class="form-grid2">
+              <div class="form-row"><label>Date *</label><input type="date" id="f-date" required></div>
+              <div class="form-row"><label id="f-samples-label">Number of Samples *</label><input type="number" id="f-samples" min="1" max="999" placeholder="e.g. 6" required></div>
+            </div>
+            <div class="form-grid2">
+              <div class="form-row"><label>Operator *</label>
+                <select id="f-operator" required>
+                  <option value="">Select operator...</option>
+                  <option value="Young">Young</option>
+                  <option value="Stanley">Stanley</option>
+                  <option value="Mingli">Mingli</option>
+                  <option value="Tinghua">Tinghua</option>
+                </select>
+              </div>
+              <div class="form-row"><label>Team *</label>
+                <select id="f-team">
+                  <option value="production">Formulations</option>
+                  <option value="analytical">Analytical</option>
+                  <option value="mrna">mRNA</option>
+                </select>
+              </div>
+            </div>
             <div class="form-row">
-              <label>LNP Stage <span class="label-optional">(optional)</span></label>
-              <select id="f-lnpstage">
-                <option value="">-- Select --</option>
-                <option value="IP LNP">IP LNP</option>
-                <option value="OFF TFF LNP">OFF TFF LNP</option>
-                <option value="BLK LNP">BLK LNP</option>
-                <option value="CNJ tLNP">CNJ tLNP</option>
-                <option value="OFF TFF tLNP">OFF TFF tLNP</option>
-                <option value="BLK tLNP">BLK tLNP</option>
-                <option value="F/T LNP">F/T LNP</option>
-              </select>
+              <label>Assays Requested *</label>
+              <div class="assay-grid" id="assay-grid"></div>
+              <div class="ee-option" id="ee-option">
+                <label><input type="checkbox" id="f-ee-only"> %EE Only (Encapsulation Efficiency, no total RNA)</label>
+              </div>
             </div>
-            <div class="form-row">
-              <label>Project Type <span class="label-optional">(optional)</span></label>
-              <select id="f-projecttype">
-                <option value="">-- Select --</option>
-                <option value="Lipid Screen">Lipid Screen</option>
-                <option value="mRNA Screen">mRNA Screen</option>
-                <option value="Process Development">Process Development</option>
-                <option value="Antibody Screen">Antibody Screen</option>
-                <option value="Material Use Test">Material Use Test</option>
-                <option value="Control Sample">Control Sample</option>
-                <option value="Stability">Stability</option>
-                <option value="Other">Other</option>
-              </select>
+            <div class="form-grid2">
+              <!-- DP: LNP Stage | DS: DS Stage -->
+              <div class="form-row" id="stage-row-dp">
+                <label>LNP Stage <span class="label-optional">(optional)</span></label>
+                <select id="f-lnpstage">
+                  <option value="">-- Select --</option>
+                  <option value="IP LNP">IP LNP</option>
+                  <option value="OFF TFF LNP">OFF TFF LNP</option>
+                  <option value="BLK LNP">BLK LNP</option>
+                  <option value="CNJ tLNP">CNJ tLNP</option>
+                  <option value="OFF TFF tLNP">OFF TFF tLNP</option>
+                  <option value="BLK tLNP">BLK tLNP</option>
+                  <option value="F/T LNP">F/T LNP</option>
+                </select>
+              </div>
+              <div class="form-row" id="stage-row-ds" style="display:none;">
+                <label>DS Stage <span class="label-optional">(optional)</span></label>
+                <select id="f-dsstage">
+                  <option value="">-- Select --</option>
+                  <option value="IP DS">IP DS</option>
+                  <option value="UF/DF DS">UF/DF DS</option>
+                  <option value="BLK DS">BLK DS</option>
+                  <option value="F/T DS">F/T DS</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Project Type <span class="label-optional">(optional)</span></label>
+                <select id="f-projecttype">
+                  <option value="">-- Select --</option>
+                  <option value="Lipid Screen">Lipid Screen</option>
+                  <option value="mRNA Screen">mRNA Screen</option>
+                  <option value="Process Development">Process Development</option>
+                  <option value="Antibody Screen">Antibody Screen</option>
+                  <option value="Material Use Test">Material Use Test</option>
+                  <option value="Control Sample">Control Sample</option>
+                  <option value="Stability">Stability</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
+            <div class="form-row"><label>Batch ID &amp; Material Lot# <span class="label-optional">(optional)</span></label><input type="text" id="f-batchid" placeholder="e.g. B2024-001, Lot# 12345" maxlength="200"></div>
+            <div class="form-row"><label>Notes / Special Instructions</label><textarea id="f-notes" placeholder="Any special handling, urgency, concentration info, etc." maxlength="500"></textarea></div>
           </div>
-          <div class="form-row"><label>Batch ID &amp; Material Lot# <span class="label-optional">(optional)</span></label><input type="text" id="f-batchid" placeholder="e.g. B2024-001, Lot# 12345" maxlength="200"></div>
-          <div class="form-row"><label>Notes / Special Instructions</label><textarea id="f-notes" placeholder="Any special handling, urgency, concentration info, etc." maxlength="500"></textarea></div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-danger" id="delete-btn" onclick="deleteEntry()" style="display:none;margin-right:auto;">Delete</button>
+          <button class="btn" id="back-btn" onclick="goBackToTypeStep()" style="display:none;">&#8592; Back</button>
           <button class="btn" onclick="closeModal()">Cancel</button>
           <button class="btn btn-primary" id="save-btn" onclick="saveEntry()">Save Submission</button>
         </div>
@@ -538,6 +610,20 @@ const ASSAY_COLORS = {
   fa:'assay-FA', hplclipids:'assay-HPLC-Lipids', hplcab:'assay-HPLC-Ab',
   od280:'assay-OD280', tns:'assay-TNS'
 };
+const DS_ASSAYS = [
+  { key:'dotplot', label:'Dot Plot',  sub:'Particle visualization' },
+  { key:'iprp',    label:'IP RP',     sub:'Ion-pair reversed phase' },
+  { key:'dsfa',    label:'FA',        sub:'Formulation analysis' },
+  { key:'od260',   label:'OD260',     sub:'RNA UV absorbance' },
+  { key:'dscemrna',label:'CE mRNA',   sub:'Capillary electrophoresis' },
+  { key:'polya',   label:'Poly A',    sub:'Poly-A tail analysis' },
+  { key:'fivecap', label:"5' Cap",    sub:'5-prime cap analysis' },
+];
+const DS_ASSAY_COLORS = {
+  dotplot:'assay-DotPlot', iprp:'assay-IPRP', dsfa:'assay-FA',
+  od260:'assay-OD260', dscemrna:'assay-CE-mRNA', polya:'assay-PolyA', fivecap:'assay-FiveCap'
+};
+const DS_STAGES = ['IP DS','UF/DF DS','BLK DS','F/T DS'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MOS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -551,6 +637,7 @@ let currentYear  = new Date().getFullYear();
 let calView   = 'week';
 let weekStart = (() => { const d=new Date(); d.setDate(d.getDate()-d.getDay()); d.setHours(0,0,0,0); return d; })();
 let editingId = null;
+let currentSubmissionType = "dp"; // "dp" or "ds"
 let panelDate = null;
 let viewingId = null;
 
@@ -576,33 +663,37 @@ function showToast(msg, isError) {
    --------------------------------------------- */
 function entryToFields(e) {
   return {
-    submission_id: e.id,
-    date:      e.date,
-    operator:  e.operator,
-    team:      e.team,
-    samples:   Number(e.samples),
-    assays:    JSON.stringify(e.assays),
-    lnpstage:  e.lnpstage || '',
-    projecttype: e.projecttype || '',
-    batchid:   e.batchid || '',
-    notes:     e.notes || '',
+    submission_id:   e.id,
+    date:            e.date,
+    operator:        e.operator,
+    team:            e.team,
+    samples:         Number(e.samples),
+    assays:          JSON.stringify(e.assays),
+    submissiontype:  e.submissiontype || 'dp',
+    lnpstage:        e.lnpstage || '',
+    dsstage:         e.dsstage || '',
+    projecttype:     e.projecttype || '',
+    batchid:         e.batchid || '',
+    notes:           e.notes || '',
   };
 }
 function recordToEntry(r) {
   let assays = {};
   try { assays = JSON.parse(r.fields.assays || '{}'); } catch(e) {}
   return {
-    id:          r.fields.submission_id || r.id,
-    airtableId:  r.id,
-    date:        (r.fields.date || '').split('T')[0],
-    operator:    r.fields.operator || '',
-    team:        r.fields.team || 'production',
-    samples:     r.fields.samples || 0,
+    id:             r.fields.submission_id || r.id,
+    airtableId:     r.id,
+    date:           (r.fields.date || '').split('T')[0],
+    operator:       r.fields.operator || '',
+    team:           r.fields.team || 'production',
+    samples:        r.fields.samples || 0,
     assays,
-    lnpstage:    r.fields.lnpstage || '',
-    projecttype: r.fields.projecttype || '',
-    batchid:     r.fields.batchid || '',
-    notes:       r.fields.notes || '',
+    submissiontype: r.fields.submissiontype || 'dp',
+    lnpstage:       r.fields.lnpstage || '',
+    dsstage:        r.fields.dsstage || '',
+    projecttype:    r.fields.projecttype || '',
+    batchid:        r.fields.batchid || '',
+    notes:          r.fields.notes || '',
   };
 }
 
@@ -690,74 +781,155 @@ function renderMonthCalendar() {
 }
 
 function renderWeekCalendar() {
-  const end = new Date(weekStart); end.setDate(end.getDate()+6);
-  const fmt = d => MOS[d.getMonth()]+' '+d.getDate();
+  var end = new Date(weekStart); end.setDate(end.getDate()+6);
+  var fmt = function(d) { return MOS[d.getMonth()]+' '+d.getDate(); };
   document.getElementById('cal-title').textContent = fmt(weekStart)+' - '+fmt(end)+' '+weekStart.getFullYear();
-  const grid = document.getElementById('cal-grid'); grid.className = 'week-grid'; grid.innerHTML = '';
-  const today = new Date(); today.setHours(0,0,0,0);
-  for (let i=0;i<7;i++) {
-    const date = new Date(weekStart); date.setDate(weekStart.getDate()+i);
-    const ds = dateStr(date), entries = data.filter(e=>e.date===ds);
-    const totalSamples = entries.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
-    const isToday = date.getTime() === today.getTime();
-    const col = document.createElement('div'); col.className = 'week-col'+(isToday?' today':'');
-    const sl = totalSamples>0 ? totalSamples+' sample'+(totalSamples!==1?'s':'') : '';
-    col.innerHTML = `<div class="week-col-header" onclick="openPanel(new Date('${ds}T12:00:00'),data.filter(e=>e.date==='${ds}'),'${ds}')">
-      <div class="wday">${esc(DAYS[date.getDay()])}</div><div class="wdate">${date.getDate()}</div>
-      <div class="wsamples">${esc(sl)}</div></div>
-    <div class="week-col-body" id="wcol-${ds}"></div>
-    <button class="week-add-btn" onclick="openAddModal('${ds}')">+ Add</button>`;
-    grid.appendChild(col);
-    const body = col.querySelector('#wcol-'+ds);
-    entries.forEach(e => {
-      const div = document.createElement('div');
-      const opClass = 'op-' + e.operator;
-      div.className = 'week-entry ' + opClass;
-      const tags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
-        .map(a=>{
-          if(a.key==='ribogreen' && e.assays.eeonly) return '<span class="week-entry-assay-tag assay-EEOnly">%EE Only</span>';
-          return '<span class="week-entry-assay-tag '+esc(ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
-        }).join('');
-      const teamLabel2 = e.team==='production'?'Form':'Anal';
-      div.innerHTML = '<div class="week-entry-op">'+esc(e.operator)+'</div>'
-        +'<div class="week-entry-detail">'+esc(String(e.samples))+' sample'+(e.samples!=1?'s':'')+' - '+teamLabel2+(e.lnpstage?' - '+esc(e.lnpstage):'')+'</div>'
-        +'<div class="week-entry-assays">'+tags+'</div>';
-      div.onclick = () => openViewModal(e.id);
-      body.appendChild(div);
-    });
 
-    // Assay sample summary footer
-    if (entries.length > 0) {
-      const assaySamples = {};
-      entries.forEach(function(e) {
-        const n = parseInt(e.samples) || 0;
-        ASSAYS.forEach(function(a) {
-          if (e.assays && e.assays[a.key]) {
-            assaySamples[a.key] = (assaySamples[a.key] || 0) + n;
-          }
-        });
-      });
-      const activeAssays = ASSAYS.filter(function(a) { return assaySamples[a.key]; });
-      const maxVal = Math.max.apply(null, activeAssays.map(function(a){ return assaySamples[a.key]; }).concat([1]));
-      const summary = document.createElement('div');
-      summary.className = 'week-assay-summary';
-      activeAssays.forEach(function(a) {
-        const val = assaySamples[a.key];
-        const pct = Math.round(val / maxVal * 100);
-        const hasEEOnly = a.key === 'ribogreen' && entries.some(function(e){ return e.assays && e.assays.ribogreen && e.assays.eeonly; });
-        const labelText = (a.key === 'ribogreen' && hasEEOnly) ? 'Ribo/%EE' : a.label;
-        const row = document.createElement('div');
-        row.className = 'week-assay-row';
-        row.innerHTML = '<span class="assay-tag ' + esc(ASSAY_COLORS[a.key]) + '" style="font-size:8px;padding:1px 4px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(labelText) + '</span>'
-          + '<div class="week-assay-bar-wrap"><div class="week-assay-bar" style="width:' + pct + '%"></div></div>'
-          + '<span class="week-assay-count">' + val + '</span>';
-        summary.appendChild(row);
-      });
-      col.insertBefore(summary, col.querySelector('.week-add-btn'));
-    }
+  var grid = document.getElementById('cal-grid');
+  grid.className = 'week-grid';
+  grid.innerHTML = '';
+
+  var today = new Date(); today.setHours(0,0,0,0);
+
+  // Pre-compute entries for each day
+  var days = [];
+  for (var i = 0; i < 7; i++) {
+    var date = new Date(weekStart); date.setDate(weekStart.getDate()+i);
+    var ds = dateStr(date);
+    var allEntries = data.filter(function(e){ return e.date===ds; });
+    var dpEntries  = allEntries.filter(function(e){ return (e.submissiontype||'dp')==='dp'; });
+    var dsEntries  = allEntries.filter(function(e){ return e.submissiontype==='ds'; });
+    var totalSamples = allEntries.reduce(function(s,e){ return s+(parseInt(e.samples)||0); }, 0);
+    var isToday = date.getTime() === today.getTime();
+    var sl = totalSamples > 0 ? totalSamples+' sample'+(totalSamples!==1?'s':'') : '';
+    days.push({ date: date, ds: ds, dpEntries: dpEntries, dsEntries: dsEntries, allEntries: allEntries, isToday: isToday, sl: sl });
   }
+
+  // ── ROW 1: Day headers ──
+  days.forEach(function(d) {
+    var hdrCell = document.createElement('div');
+    hdrCell.className = 'week-col-header' + (d.isToday ? ' today' : '');
+    hdrCell.style.cssText = 'padding:8px 5px 6px;text-align:center;border-bottom:0.5px solid var(--border);background:' + (d.isToday ? 'var(--blue-bg)' : 'var(--surface2)') + ';cursor:pointer;';
+    hdrCell.innerHTML = '<div class="wday">'+esc(DAYS[d.date.getDay()])+'</div>'
+      +'<div class="wdate" style="font-size:18px;font-weight:600;color:'+(d.isToday?'var(--blue-text)':'var(--text)')+';">'+d.date.getDate()+'</div>'
+      +'<div class="wsamples">'+esc(d.sl)+'</div>';
+    (function(dayObj) {
+      hdrCell.onclick = function() { openPanel(new Date(dayObj.ds+'T12:00:00'), data.filter(function(e){ return e.date===dayObj.ds; }), dayObj.ds); };
+    })(d);
+    grid.appendChild(hdrCell);
+  });
+
+  // ── DP section label row ──
+  days.forEach(function(d, i) {
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'padding:3px 6px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:#eef5fd;border-top:3px solid var(--blue-border);color:var(--blue-text);';
+    lbl.textContent = i === 0 ? 'Drug Product' : '';
+    grid.appendChild(lbl);
+  });
+
+  // ── DP body row (one cell per day) ──
+  days.forEach(function(d) {
+    var cell = document.createElement('div');
+    cell.className = 'week-col-body';
+    cell.id = 'wcol-dp-'+d.ds;
+    cell.style.cssText = 'background:var(--surface);padding:5px;display:flex;flex-direction:column;gap:4px;min-height:80px;';
+    d.dpEntries.forEach(function(e) {
+      var div = document.createElement('div');
+      div.className = 'week-entry op-'+e.operator;
+      var tags = ASSAYS.filter(function(a){ return e.assays&&e.assays[a.key]; }).map(function(a) {
+        if (a.key==='ribogreen' && e.assays.eeonly) return '<span class="week-entry-assay-tag assay-EEOnly">%EE Only</span>';
+        return '<span class="week-entry-assay-tag '+esc(ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
+      }).join('');
+      var tl = e.team==='production'?'Form':e.team==='mrna'?'mRNA':'Anal';
+      div.innerHTML = '<div class="week-entry-op">'+esc(e.operator)+'</div>'
+        +'<div class="week-entry-detail">'+esc(String(e.samples))+' sample'+(e.samples!=1?'s':'')+' - '+tl+(e.lnpstage?' - '+esc(e.lnpstage):'')+'</div>'
+        +'<div class="week-entry-assays">'+tags+'</div>';
+      div.onclick = (function(id){ return function(){ openViewModal(id); }; })(e.id);
+      cell.appendChild(div);
+    });
+    // DP assay summary
+    var dpSummary = buildWeekAssaySummary(d.dpEntries, ASSAYS, ASSAY_COLORS);
+    if (dpSummary) cell.appendChild(dpSummary);
+    // Add button
+    var addBtn = document.createElement('button');
+    addBtn.className = 'week-add-btn';
+    addBtn.textContent = '+ Add DP';
+    addBtn.onclick = (function(ds){ return function(){ openAddModal(ds); }; })(d.ds);
+    cell.appendChild(addBtn);
+    grid.appendChild(cell);
+  });
+
+  // ── DS section label row ──
+  days.forEach(function(d, i) {
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'padding:3px 6px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:#fef6e4;border-top:3px solid #9c6e00;color:#7a4100;';
+    lbl.textContent = i === 0 ? 'Drug Substance' : '';
+    grid.appendChild(lbl);
+  });
+
+  // ── DS body row (one cell per day) ──
+  days.forEach(function(d) {
+    var cell = document.createElement('div');
+    cell.className = 'week-col-body ds-col-body';
+    cell.id = 'wcol-ds-'+d.ds;
+    cell.style.cssText = 'background:var(--surface);padding:5px;display:flex;flex-direction:column;gap:4px;min-height:80px;';
+    d.dsEntries.forEach(function(e) {
+      var div = document.createElement('div');
+      div.className = 'week-entry-ds op-'+e.operator;
+      var tags = DS_ASSAYS.filter(function(a){ return e.assays&&e.assays[a.key]; }).map(function(a) {
+        return '<span class="week-entry-assay-tag '+esc(DS_ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
+      }).join('');
+      var tl = e.team==='mrna'?'mRNA':e.team==='production'?'Form':'Anal';
+      div.innerHTML = '<div class="week-entry-op">'+esc(e.operator)+'</div>'
+        +'<div class="week-entry-detail">'+esc(String(e.samples))+' sample'+(e.samples!=1?'s':'')+' - '+tl+(e.dsstage?' - '+esc(e.dsstage):'')+'</div>'
+        +'<div class="week-entry-assays">'+tags+'</div>';
+      div.onclick = (function(id){ return function(){ openViewModal(id); }; })(e.id);
+      cell.appendChild(div);
+    });
+    // DS assay summary
+    var dsSummary = buildWeekAssaySummary(d.dsEntries, DS_ASSAYS, DS_ASSAY_COLORS);
+    if (dsSummary) cell.appendChild(dsSummary);
+    // Add button
+    var addBtn = document.createElement('button');
+    addBtn.className = 'week-add-btn';
+    addBtn.textContent = '+ Add DS';
+    addBtn.onclick = (function(ds){ return function(){ currentSubmissionType='ds'; openAddModal(ds); }; })(d.ds);
+    cell.appendChild(addBtn);
+    grid.appendChild(cell);
+  });
+
   renderLegend();
 }
+
+function buildWeekAssaySummary(entries, assayList, colorMap) {
+  if (!entries.length) return null;
+  var assaySamples = {};
+  entries.forEach(function(e) {
+    var n = parseInt(e.samples) || 0;
+    assayList.forEach(function(a) {
+      if (e.assays && e.assays[a.key]) assaySamples[a.key] = (assaySamples[a.key]||0) + n;
+    });
+  });
+  var active = assayList.filter(function(a){ return assaySamples[a.key]; });
+  if (!active.length) return null;
+  var maxVal = Math.max.apply(null, active.map(function(a){ return assaySamples[a.key]; }).concat([1]));
+  var summary = document.createElement('div');
+  summary.className = 'week-assay-summary';
+  active.forEach(function(a) {
+    var val = assaySamples[a.key];
+    var pct = Math.round(val / maxVal * 100);
+    var hasEEOnly = a.key==='ribogreen' && entries.some(function(e){ return e.assays&&e.assays.ribogreen&&e.assays.eeonly; });
+    var labelText = (a.key==='ribogreen'&&hasEEOnly) ? 'Ribo/%EE' : a.label;
+    var row = document.createElement('div');
+    row.className = 'week-assay-row';
+    row.innerHTML = '<span class="assay-tag '+(colorMap[a.key]||'')+'" style="font-size:8px;padding:1px 4px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(labelText)+'</span>'
+      +'<div class="week-assay-bar-wrap"><div class="week-assay-bar" style="width:'+pct+'%"></div></div>'
+      +'<span class="week-assay-count">'+val+'</span>';
+    summary.appendChild(row);
+  });
+  return summary;
+}
+
 
 function makeCell(date, otherMonth) {
   const ds = dateStr(date), entries = data.filter(e=>e.date===ds);
@@ -793,8 +965,13 @@ function makeCell(date, otherMonth) {
 }
 
 function renderLegend() {
-  const assayLegend = ASSAYS.map(a =>
+  const dpLabel = '<span style="font-size:10px;font-weight:700;color:var(--blue-text);margin-right:4px;">DP:</span>';
+  const assayLegend = dpLabel + ASSAYS.map(a =>
     '<div class="legend-item"><div class="legend-dot '+esc(ASSAY_COLORS[a.key])+'" style="background:currentColor;opacity:0.7"></div>'+esc(a.label)+'</div>'
+  ).join('');
+  const dsLabel = '<span style="font-size:10px;font-weight:700;color:#7a4100;margin-right:4px;margin-left:8px;">DS:</span>';
+  const dsAssayLegend = dsLabel + DS_ASSAYS.map(a =>
+    '<div class="legend-item"><div class="legend-dot '+esc(DS_ASSAY_COLORS[a.key])+'" style="background:currentColor;opacity:0.7"></div>'+esc(a.label)+'</div>'
   ).join('');
   const opLegend = [
     {name:'Young',   bg:'#e8f4fd', border:'#1565c0'},
@@ -805,6 +982,7 @@ function renderLegend() {
     '<div class="legend-item"><div class="op-legend-dot" style="background:'+o.bg+';border:2px solid '+o.border+';border-radius:3px;width:12px;height:9px;"></div>'+o.name+'</div>'
   ).join('');
   document.getElementById('cal-legend').innerHTML = assayLegend
+    + dsAssayLegend
     + '<span style="display:inline-block;width:1px;height:14px;background:var(--border-med);margin:0 6px;vertical-align:middle;"></span>'
     + opLegend;
 }
@@ -815,8 +993,9 @@ function renderLegend() {
 function openViewModal(id) {
   const e = data.find(e=>e.id===id); if (!e) return;
   viewingId = id;
-  const teamCls   = e.team==='production' ? 'prod' : 'anal';
-  const teamLabel = e.team==='production' ? 'Formulations' : 'Analytical';
+  const teamCls   = e.team==='production' ? 'prod' : e.team==='mrna' ? 'mrna' : 'anal';
+  const teamLabel = e.team==='production' ? 'Formulations' : e.team==='mrna' ? 'mRNA' : 'Analytical';
+  const typeLabel = (e.submissiontype||'dp')==='ds' ? 'Drug Substance' : 'Drug Product';
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const assayTags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
     .map(a=>`<span class="view-assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' -- %EE Only':''}</span>`).join('');
@@ -825,7 +1004,7 @@ function openViewModal(id) {
       <div class="view-avatar ${esc(teamCls)}">${esc(initials)}</div>
       <div class="view-hero-info">
         <div class="view-operator">${esc(e.operator)}</div>
-        <div class="view-date">${esc(fmtDate(e.date))} &nbsp;.&nbsp; <span class="sub-team-badge ${esc(teamCls)}" style="font-size:11px;">${esc(teamLabel)}</span></div>
+        <div class="view-date">${esc(fmtDate(e.date))} &nbsp;.&nbsp; <span class="sub-team-badge ${esc(teamCls)}" style="font-size:11px;">${esc(teamLabel)}</span> &nbsp;<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface2);color:var(--text-sec);font-weight:600;">${esc(typeLabel)}</span></div>
       </div>
     </div>
     <div class="view-fields">
@@ -836,7 +1015,7 @@ function openViewModal(id) {
     <div class="view-assays">${assayTags||'<span style="font-size:13px;color:var(--text-hint);">None selected</span>'}</div>
     ${e.lnpstage||e.projecttype||e.batchid ? `<hr class="view-divider">
       <div class="view-fields" style="margin-bottom:0;">
-        ${e.lnpstage ? '<div class="view-field"><div class="view-field-label">LNP Stage</div><div class="view-field-value small">'+esc(e.lnpstage)+'</div></div>' : ''}
+        ${(e.submissiontype||'dp')==='ds' ? (e.dsstage ? '<div class="view-field"><div class="view-field-label">DS Stage</div><div class="view-field-value small">'+esc(e.dsstage)+'</div></div>' : '') : (e.lnpstage ? '<div class="view-field"><div class="view-field-label">LNP Stage</div><div class="view-field-value small">'+esc(e.lnpstage)+'</div></div>' : '')}
         ${e.projecttype ? '<div class="view-field"><div class="view-field-label">Project Type</div><div class="view-field-value small">'+esc(e.projecttype)+'</div></div>' : ''}
         ${e.batchid ? '<div class="view-field" style="grid-column:1/-1"><div class="view-field-label">Batch ID / Material Lot#</div><div class="view-field-value small">'+esc(e.batchid)+'</div></div>' : ''}
       </div>` : ''}
@@ -897,15 +1076,62 @@ function openPanel(date, entries, ds) {
 }
 function closePanel() { document.getElementById('day-panel').classList.remove('open'); panelDate = null; }
 
+
+/* ---------------------------------------------
+   Submission type selector
+   --------------------------------------------- */
+function selectSubmissionType(type) {
+  currentSubmissionType = type;
+  document.getElementById('type-card-dp').classList.toggle('selected', type === 'dp');
+  document.getElementById('type-card-ds').classList.toggle('selected', type === 'ds');
+}
+
+function goToFormStep() {
+  document.getElementById('step-type').classList.remove('active');
+  document.getElementById('step-form').classList.add('active');
+  document.getElementById('save-btn').style.display = '';
+  document.getElementById('back-btn').style.display = '';
+  applySubmissionType(currentSubmissionType);
+}
+
+function goBackToTypeStep() {
+  document.getElementById('step-form').classList.remove('active');
+  document.getElementById('step-type').classList.add('active');
+  document.getElementById('save-btn').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'none';
+}
+
+function applySubmissionType(type) {
+  const isDp = type === 'dp';
+  // Swap assay grid
+  buildAssayGrid(type);
+  // Swap stage row
+  document.getElementById('stage-row-dp').style.display = isDp ? '' : 'none';
+  document.getElementById('stage-row-ds').style.display = isDp ? 'none' : '';
+  // Update sample label
+  document.getElementById('f-samples-label').textContent = isDp ? 'Number of LNP Samples *' : 'Number of DS Samples *';
+}
+
+function getActiveAssays() {
+  return currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
+}
+
+function getActiveAssayColors() {
+  return currentSubmissionType === 'ds' ? DS_ASSAY_COLORS : ASSAY_COLORS;
+}
+
 /* ---------------------------------------------
    Add / Edit modal
    --------------------------------------------- */
-function buildAssayGrid() {
-  document.getElementById('assay-grid').innerHTML = ASSAYS.map(a=>`
+function buildAssayGrid(type) {
+  const assayList = (type || currentSubmissionType) === 'ds' ? DS_ASSAYS : ASSAYS;
+  const showEE = (type || currentSubmissionType) !== 'ds';
+  document.getElementById('assay-grid').innerHTML = assayList.map(a=>`
     <label class="assay-check" id="check-${a.key}">
       <input type="checkbox" id="f-${a.key}" onchange="onAssayChange('${a.key}')">
       <div><div class="assay-check-label">${esc(a.label)}</div><div class="assay-check-sub">${esc(a.sub)}</div></div>
     </label>`).join('');
+  document.getElementById('ee-option').style.display = showEE ? '' : 'none';
 }
 function onAssayChange(key) {
   document.getElementById('check-'+key).classList.toggle('selected', document.getElementById('f-'+key).checked);
@@ -916,90 +1142,120 @@ function onAssayChange(key) {
 }
 function openAddModal(date) {
   editingId = null;
+  currentSubmissionType = 'dp';
   document.getElementById('modal-title').textContent = 'New Sample Submission';
   document.getElementById('delete-btn').style.display = 'none';
-  buildAssayGrid();
-  document.getElementById('f-date').value      = date || dateStr(new Date());
-  document.getElementById('f-samples').value   = '';
-  document.getElementById('f-operator').value  = '';
-  document.getElementById('f-team').value      = 'production';
-  document.getElementById('f-lnpstage').value  = '';
+  document.getElementById('save-btn').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'none';
+  // Reset to type step
+  document.getElementById('step-type').classList.add('active');
+  document.getElementById('step-form').classList.remove('active');
+  selectSubmissionType('dp');
+  buildAssayGrid('dp');
+  document.getElementById('f-date').value        = date || dateStr(new Date());
+  document.getElementById('f-samples').value     = '';
+  document.getElementById('f-operator').value    = '';
+  document.getElementById('f-team').value        = 'production';
+  document.getElementById('f-lnpstage').value    = '';
+  document.getElementById('f-dsstage').value     = '';
   document.getElementById('f-projecttype').value = '';
-  document.getElementById('f-batchid').value   = '';
-  document.getElementById('f-notes').value     = '';
-  document.getElementById('f-ee-only').checked = false;
+  document.getElementById('f-batchid').value     = '';
+  document.getElementById('f-notes').value       = '';
+  document.getElementById('f-ee-only').checked   = false;
   document.getElementById('ee-option').classList.remove('show');
   document.getElementById('modal-overlay').classList.add('open');
 }
 function openEditModal(id) {
   const entry = data.find(e=>e.id===id); if (!entry) return;
   editingId = id;
+  currentSubmissionType = entry.submissiontype || 'dp';
   document.getElementById('modal-title').textContent = 'Edit Submission';
   document.getElementById('delete-btn').style.display = 'block';
-  buildAssayGrid();
+  document.getElementById('save-btn').style.display = '';
+  document.getElementById('back-btn').style.display = 'none';
+  // Skip type step -- go straight to form
+  document.getElementById('step-type').classList.remove('active');
+  document.getElementById('step-form').classList.add('active');
+  applySubmissionType(currentSubmissionType);
   document.getElementById('f-date').value        = entry.date;
   document.getElementById('f-samples').value     = entry.samples;
   document.getElementById('f-operator').value    = entry.operator;
   document.getElementById('f-team').value        = entry.team;
   document.getElementById('f-lnpstage').value    = entry.lnpstage || '';
+  document.getElementById('f-dsstage').value     = entry.dsstage || '';
   document.getElementById('f-projecttype').value = entry.projecttype || '';
   document.getElementById('f-batchid').value     = entry.batchid || '';
   document.getElementById('f-notes').value       = entry.notes || '';
-  ASSAYS.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
+  const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
+  activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
   if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
   document.getElementById('modal-overlay').classList.add('open');
 }
-function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); editingId = null; }
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+  document.getElementById('save-btn').style.display = '';
+}
 
 function copySubmission(id) {
   const entry = data.find(e=>e.id===id); if (!entry) return;
   editingId = null;
+  currentSubmissionType = entry.submissiontype || 'dp';
   document.getElementById('modal-title').textContent = 'Copy Submission';
   document.getElementById('delete-btn').style.display = 'none';
-  buildAssayGrid();
+  document.getElementById('save-btn').style.display = '';
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('step-type').classList.remove('active');
+  document.getElementById('step-form').classList.add('active');
+  applySubmissionType(currentSubmissionType);
   document.getElementById('f-date').value        = '';
   document.getElementById('f-samples').value     = entry.samples;
   document.getElementById('f-operator').value    = entry.operator;
   document.getElementById('f-team').value        = entry.team;
   document.getElementById('f-lnpstage').value    = entry.lnpstage || '';
+  document.getElementById('f-dsstage').value     = entry.dsstage || '';
   document.getElementById('f-projecttype').value = entry.projecttype || '';
   document.getElementById('f-batchid').value     = entry.batchid || '';
   document.getElementById('f-notes').value       = entry.notes || '';
-  ASSAYS.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
+  const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
+  activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
   if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('f-date').focus();
 }
 
 async function saveEntry() {
-  const date        = document.getElementById('f-date').value;
-  const samples     = parseInt(document.getElementById('f-samples').value);
-  const operator    = document.getElementById('f-operator').value;
-  const team        = document.getElementById('f-team').value;
-  const lnpstage    = document.getElementById('f-lnpstage').value;
-  const projecttype = document.getElementById('f-projecttype').value;
-  const batchid     = document.getElementById('f-batchid').value.trim().slice(0, 200);
-  const notes       = document.getElementById('f-notes').value.trim().slice(0, 500);
+  const date           = document.getElementById('f-date').value;
+  const samples        = parseInt(document.getElementById('f-samples').value);
+  const operator       = document.getElementById('f-operator').value;
+  const team           = document.getElementById('f-team').value;
+  const submissiontype = currentSubmissionType || 'dp';
+  const lnpstage       = document.getElementById('f-lnpstage').value;
+  const dsstage        = document.getElementById('f-dsstage').value;
+  const projecttype    = document.getElementById('f-projecttype').value;
+  const batchid        = document.getElementById('f-batchid').value.trim().slice(0, 200);
+  const notes          = document.getElementById('f-notes').value.trim().slice(0, 500);
 
   const validErr = validateEntry({ date, samples, operator });
   if (validErr) { showToast(validErr, true); return; }
 
+  const activeAssayList = submissiontype === 'ds' ? DS_ASSAYS : ASSAYS;
   const assays = {};
-  ASSAYS.forEach(a => { assays[a.key] = document.getElementById('f-'+a.key)?.checked || false; });
-  assays.eeonly = document.getElementById('f-ee-only').checked;
-  if (!ASSAYS.some(a => assays[a.key])) { showToast('Please select at least one assay.', true); return; }
+  activeAssayList.forEach(a => { assays[a.key] = document.getElementById('f-'+a.key)?.checked || false; });
+  assays.eeonly = submissiontype !== 'ds' && document.getElementById('f-ee-only').checked;
+  if (!activeAssayList.some(a => assays[a.key])) { showToast('Please select at least one assay.', true); return; }
 
   const saveBtn = document.getElementById('save-btn');
   saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; setSyncState('syncing');
   try {
     if (editingId) {
       const entry   = data.find(e=>e.id===editingId);
-      const updated = { ...entry, date, samples, operator, team, assays, lnpstage, projecttype, batchid, notes };
+      const updated = { ...entry, date, samples, operator, team, assays, submissiontype, lnpstage, dsstage, projecttype, batchid, notes };
       await apiFetch('/'+entry.airtableId, { method: 'PATCH', body: JSON.stringify({ fields: entryToFields(updated) }) });
       const idx = data.findIndex(e=>e.id===editingId); if (idx !== -1) data[idx] = updated;
       showToast('Submission updated.');
     } else {
-      const newEntry = { id: uid(), date, samples, operator, team, assays, lnpstage, projecttype, batchid, notes };
+      const newEntry = { id: uid(), date, samples, operator, team, assays, submissiontype, lnpstage, dsstage, projecttype, batchid, notes };
       const res = await apiFetch('', { method: 'POST', body: JSON.stringify({ fields: entryToFields(newEntry) }) });
       newEntry.airtableId = res.id; data.push(newEntry);
       showToast('Submission added!');
@@ -1049,8 +1305,8 @@ function confirmDelete(id) {
    --------------------------------------------- */
 function renderEntryCard(e, compact) {
   const initials  = e.operator.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const teamCls   = e.team==='production' ? 'prod' : 'anal';
-  const teamLabel = e.team==='production' ? 'Formulations' : 'Analytical';
+  const teamCls   = e.team==='production' ? 'prod' : e.team==='mrna' ? 'mrna' : 'anal';
+  const teamLabel = e.team==='production' ? 'Formulations' : e.team==='mrna' ? 'mRNA' : 'Analytical';
   const assayTags = ASSAYS.filter(a=>e.assays&&e.assays[a.key])
     .map(a=>`<span class="assay-tag ${esc(ASSAY_COLORS[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' (%EE)':''}</span>`).join('');
   return `<div class="submission-card">
@@ -1128,7 +1384,7 @@ function renderSummary() {
   document.getElementById('operator-breakdown').innerHTML = !sorted.length
     ? '<p style="color:var(--text-sec);font-size:13px;">No data yet.</p>'
     : `<table class="operator-table"><thead><tr><th>Operator</th><th>Team</th><th>Subs</th><th>Samples</th></tr></thead><tbody>`
-      + sorted.map(([name,s])=>`<tr><td><strong>${esc(name)}</strong></td><td><span class="sub-team-badge ${s.team==='production'?'prod':'anal'}">${s.team==='production' ? 'Formulations' : 'Analytical'}</span></td><td>${s.subs}</td><td>${s.samples}</td></tr>`).join('')
+      + sorted.map(([name,s])=>`<tr><td><strong>${esc(name)}</strong></td><td><span class="sub-team-badge ${s.team==='production'?'prod':'anal'}">${s.team==='production' ? 'Formulations' : s.team==='mrna' ? 'mRNA' : 'Analytical'}</span></td><td>${s.subs}</td><td>${s.samples}</td></tr>`).join('')
       + `</tbody></table>`;
   const next14 = new Date(); next14.setDate(next14.getDate()+14);
   const today2 = dateStr(new Date());
