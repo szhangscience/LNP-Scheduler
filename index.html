@@ -1583,7 +1583,7 @@ function renderSummary() {
 
   // ── Operator breakdowns ──
   function buildOpTable(subset, elId) {
-    const opStats = {};
+    const opStats = Object.create(null); // prototype-free — prevents __proto__ pollution
     subset.forEach(e => {
       if (!opStats[e.operator]) opStats[e.operator] = { team:e.team, subs:0, samples:0 };
       opStats[e.operator].subs++;
