@@ -278,6 +278,16 @@
 
   /* EE-only assay tag */
   .assay-EEOnly { background: #fff3cd; color: #7b4f00; }
+  /* Site badges */
+  .site-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; letter-spacing: 0.4px; white-space: nowrap; }
+  .site-badge.SD { background: var(--blue-bg); color: var(--blue-text); border: 1px solid #b3d1f0; }
+  .site-badge.SH { background: #fde8e8; color: #b71c1c; border: 1px solid #f5b8b8; }
+  /* Site filter toggle */
+  .site-filter { display: flex; background: var(--surface2); border-radius: 7px; padding: 2px; gap: 2px; }
+  .site-btn { background: none; border: none; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; color: var(--text-sec); cursor: pointer; transition: background 0.1s; white-space: nowrap; }
+  .site-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .site-btn.SD.active { background: var(--blue-bg); color: var(--blue-text); }
+  .site-btn.SH.active { background: #fde8e8; color: #b71c1c; }
 
   /* Operator legend swatches */
   .op-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -351,6 +361,11 @@
     <div id="page-calendar" class="page active">
       <div class="cal-header">
         <h2 id="cal-title"></h2>
+        <div class="site-filter">
+          <button class="site-btn active" id="site-btn-all" onclick="setSiteFilter('all')">All Sites</button>
+          <button class="site-btn SD" id="site-btn-SD" onclick="setSiteFilter('SD')">🇺🇸 SD</button>
+          <button class="site-btn SH" id="site-btn-SH" onclick="setSiteFilter('SH')">🇨🇳 SH</button>
+        </div>
         <div class="view-toggle">
           <button class="toggle-btn" id="toggle-month" onclick="setCalView('month')">Month</button>
           <button class="toggle-btn active" id="toggle-week" onclick="setCalView('week')">Week</button>
@@ -369,6 +384,12 @@
     <div id="page-submissions" class="page">
       <h2 style="font-size:17px;font-weight:600;margin-bottom:14px;">All Submissions</h2>
       <div class="filter-bar">
+        <label>Site:</label>
+        <select id="filter-site" onchange="renderSubmissions()">
+          <option value="">All sites</option>
+          <option value="SD">🇺🇸 San Diego (SD)</option>
+          <option value="SH">🇨🇳 Shanghai (SH)</option>
+        </select>
         <label>Team:</label>
         <select id="filter-team" onchange="renderSubmissions()">
           <option value="">All teams</option>
@@ -404,6 +425,18 @@
         <div class="card-section" style="border-top:3px solid #9c6e00;">
           <div style="font-size:11px;font-weight:700;color:#7a4100;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Drug Substance</div>
           <div class="stats-grid" id="stats-grid-ds" style="margin-bottom:0;"></div>
+        </div>
+      </div>
+
+      <!-- SD / SH site split stat rows -->
+      <div class="two-col" style="margin-bottom:16px;">
+        <div class="card-section" style="border-top:3px solid #b3d1f0;">
+          <div style="font-size:11px;font-weight:700;color:var(--blue-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🇺🇸 San Diego (SD)</div>
+          <div class="stats-grid" id="stats-grid-sd" style="margin-bottom:0;"></div>
+        </div>
+        <div class="card-section" style="border-top:3px solid #f5b8b8;">
+          <div style="font-size:11px;font-weight:700;color:#b71c1c;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🇨🇳 Shanghai (SH)</div>
+          <div class="stats-grid" id="stats-grid-sh" style="margin-bottom:0;"></div>
         </div>
       </div>
 
@@ -466,6 +499,18 @@
         <div class="card-section" style="border-top:3px solid #9c6e00;">
           <div class="section-title" style="color:#7a4100;">DS Submissions by Operator</div>
           <div id="operator-breakdown-ds"></div>
+        </div>
+      </div>
+
+      <!-- Operator breakdown: SD + SH side by side -->
+      <div class="two-col">
+        <div class="card-section" style="border-top:3px solid #b3d1f0;">
+          <div class="section-title" style="color:var(--blue-text);">🇺🇸 SD Submissions by Operator</div>
+          <div id="operator-breakdown-sd"></div>
+        </div>
+        <div class="card-section" style="border-top:3px solid #f5b8b8;">
+          <div class="section-title" style="color:#b71c1c;">🇨🇳 SH Submissions by Operator</div>
+          <div id="operator-breakdown-sh"></div>
         </div>
       </div>
 
@@ -537,15 +582,19 @@
             </div>
             <div class="form-grid2">
               <div class="form-row"><label>Operator *</label>
-                <select id="f-operator" required>
+                <select id="f-operator" onchange="onOperatorChange()" required>
                   <option value="">Select operator...</option>
-                  <option value="Young">Young</option>
-                  <option value="Stanley">Stanley</option>
-                  <option value="Christian">Christian</option>
-                  <option value="Wu Tinghua">Wu Tinghua</option>
-                  <option value="Zhao Jingyu">Zhao Jingyu</option>
-                  <option value="Wang Mingli">Wang Mingli</option>
-                  <option value="Xu Anqi">Xu Anqi</option>
+                  <optgroup label="🇺🇸 San Diego (SD)">
+                    <option value="Young">Young</option>
+                    <option value="Stanley">Stanley</option>
+                    <option value="Christian">Christian</option>
+                  </optgroup>
+                  <optgroup label="🇨🇳 Shanghai (SH)">
+                    <option value="Wu Tinghua">Wu Tinghua</option>
+                    <option value="Zhao Jingyu">Zhao Jingyu</option>
+                    <option value="Wang Mingli">Wang Mingli</option>
+                    <option value="Xu Anqi">Xu Anqi</option>
+                  </optgroup>
                 </select>
               </div>
               <div class="form-row"><label>Team *</label>
@@ -555,6 +604,10 @@
                   <option value="mrna">mRNA</option>
                 </select>
               </div>
+            </div>
+            <div id="site-display-row" style="display:none;margin-bottom:14px;">
+              <span style="font-size:11px;font-weight:600;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.4px;">Testing Site &nbsp;</span>
+              <span id="site-display-badge" class="site-badge"></span>
             </div>
             <div class="form-row">
               <label>Assays Requested *</label>
@@ -701,13 +754,22 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MOS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+/* Operator → Site mapping */
+const OPERATOR_SITE = {
+  'Young':      'SD', 'Stanley':    'SD', 'Christian':  'SD',
+  'Wu Tinghua': 'SH', 'Zhao Jingyu':'SH', 'Wang Mingli':'SH', 'Xu Anqi':    'SH',
+};
+const SITE_LABEL = { SD: '🇺🇸 San Diego', SH: '🇨🇳 Shanghai' };
+function getSite(operator) { return OPERATOR_SITE[operator] || 'SD'; }
+
 /* ---------------------------------------------
    State
    --------------------------------------------- */
 let data = [];
 let currentMonth = new Date().getMonth();
 let currentYear  = new Date().getFullYear();
-let calView   = 'week';
+let calView      = 'week';
+let currentSite  = 'all'; // 'all' | 'SD' | 'SH'
 let weekStart = (() => { const d=new Date(); d.setDate(d.getDate()-d.getDay()); d.setHours(0,0,0,0); return d; })();
 let editingId = null;
 let currentSubmissionType = "dp"; // "dp" or "ds"
@@ -747,6 +809,7 @@ function entryToFields(e) {
     samples:         Number(e.samples),
     assays:          JSON.stringify(e.assays),
     submissiontype:  e.submissiontype || 'dp',
+    site:            e.site || getSite(e.operator),
     lnpstage:        e.lnpstage || '',
     dsstage:         e.dsstage || '',
     projecttype:     e.projecttype || '',
@@ -757,15 +820,17 @@ function entryToFields(e) {
 function recordToEntry(r) {
   let assays = {};
   try { assays = JSON.parse(r.fields.assays || '{}'); } catch(e) {}
+  const operator = r.fields.operator || '';
   return {
     id:             r.fields.submission_id || r.id,
     airtableId:     r.id,
     date:           (r.fields.date || '').split('T')[0],
-    operator:       r.fields.operator || '',
+    operator,
     team:           r.fields.team || 'production',
     samples:        r.fields.samples || 0,
     assays,
     submissiontype: r.fields.submissiontype || 'dp',
+    site:           r.fields.site || getSite(operator),
     lnpstage:       r.fields.lnpstage || '',
     dsstage:        r.fields.dsstage || '',
     projecttype:    r.fields.projecttype || '',
@@ -902,6 +967,31 @@ function goToday() {
   weekStart = (() => { const d=new Date(); d.setDate(d.getDate()-d.getDay()); d.setHours(0,0,0,0); return d; })();
   renderCalendar(); closePanel();
 }
+function setSiteFilter(site) {
+  currentSite = site;
+  ['all','SD','SH'].forEach(s => {
+    const btn = document.getElementById('site-btn-'+s);
+    if (btn) btn.classList.toggle('active', s === site);
+  });
+  closePanel(); renderCalendar();
+}
+function filterBySite(entries) {
+  if (currentSite === 'all') return entries;
+  return entries.filter(e => (e.site || getSite(e.operator)) === currentSite);
+}
+function onOperatorChange() {
+  const op   = document.getElementById('f-operator').value;
+  const site = op ? getSite(op) : null;
+  const row  = document.getElementById('site-display-row');
+  const badge = document.getElementById('site-display-badge');
+  if (site) {
+    badge.textContent  = site === 'SD' ? '🇺🇸 San Diego (SD)' : '🇨🇳 Shanghai (SH)';
+    badge.className    = 'site-badge ' + site;
+    row.style.display  = '';
+  } else {
+    row.style.display  = 'none';
+  }
+}
 
 /* ---------------------------------------------
    Calendar rendering
@@ -938,7 +1028,7 @@ function renderWeekCalendar() {
   for (var i = 0; i < 7; i++) {
     var date = new Date(weekStart); date.setDate(weekStart.getDate()+i);
     var ds = dateStr(date);
-    var allEntries = data.filter(function(e){ return e.date===ds; });
+    var allEntries = filterBySite(data.filter(function(e){ return e.date===ds; }));
     var dpEntries  = allEntries.filter(function(e){ return (e.submissiontype||'dp')==='dp'; });
     var dsEntries  = allEntries.filter(function(e){ return e.submissiontype==='ds'; });
     var totalSamples = allEntries.reduce(function(s,e){ return s+(parseInt(e.samples)||0); }, 0);
@@ -983,7 +1073,8 @@ function renderWeekCalendar() {
         return '<span class="week-entry-assay-tag '+esc(ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
       }).join('');
       var tl = e.team==='production'?'Form':e.team==='mrna'?'mRNA':'Anal';
-      div.innerHTML = '<div class="week-entry-op">'+esc(e.operator)+'</div>'
+      var siteBadge = currentSite==='all' ? '<span class="site-badge '+(e.site||getSite(e.operator))+'" style="font-size:8px;padding:1px 4px;">'+(e.site||getSite(e.operator))+'</span> ' : '';
+      div.innerHTML = '<div class="week-entry-op">'+siteBadge+esc(e.operator)+'</div>'
         +'<div class="week-entry-detail">'+esc(String(e.samples))+' sample'+(e.samples!=1?'s':'')+' - '+tl+(e.lnpstage?' - '+esc(e.lnpstage):'')+'</div>'
         +'<div class="week-entry-assays">'+tags+'</div>';
       div.onclick = (function(id){ return function(){ openViewModal(id); }; })(e.id);
@@ -1022,7 +1113,8 @@ function renderWeekCalendar() {
         return '<span class="week-entry-assay-tag '+esc(DS_ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
       }).join('');
       var tl = e.team==='mrna'?'mRNA':e.team==='production'?'Form':'Anal';
-      div.innerHTML = '<div class="week-entry-op">'+esc(e.operator)+'</div>'
+      var siteBadgeDs = currentSite==='all' ? '<span class="site-badge '+(e.site||getSite(e.operator))+'" style="font-size:8px;padding:1px 4px;">'+(e.site||getSite(e.operator))+'</span> ' : '';
+      div.innerHTML = '<div class="week-entry-op">'+siteBadgeDs+esc(e.operator)+'</div>'
         +'<div class="week-entry-detail">'+esc(String(e.samples))+' sample'+(e.samples!=1?'s':'')+' - '+tl+(e.dsstage?' - '+esc(e.dsstage):'')+'</div>'
         +'<div class="week-entry-assays">'+tags+'</div>';
       div.onclick = (function(id){ return function(){ openViewModal(id); }; })(e.id);
@@ -1074,7 +1166,7 @@ function buildWeekAssaySummary(entries, assayList, colorMap) {
 
 
 function makeCell(date, otherMonth) {
-  const ds = dateStr(date), entries = data.filter(e=>e.date===ds);
+  const ds = dateStr(date), entries = filterBySite(data.filter(e=>e.date===ds));
   const today = new Date(); today.setHours(0,0,0,0);
   const cell = document.createElement('div');
   cell.className = 'cal-cell'+(otherMonth?' other-month':'')+(date.getDay()===0||date.getDay()===6?' weekend':'')+(date.getTime()===today.getTime()?' today':'');
@@ -1152,7 +1244,7 @@ function openViewModal(id) {
       <div class="view-avatar ${esc(teamCls)}">${esc(initials)}</div>
       <div class="view-hero-info">
         <div class="view-operator">${esc(e.operator)}</div>
-        <div class="view-date">${esc(fmtDate(e.date))} &nbsp;.&nbsp; <span class="sub-team-badge ${esc(teamCls)}" style="font-size:11px;">${esc(teamLabel)}</span> &nbsp;<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface2);color:var(--text-sec);font-weight:600;">${esc(typeLabel)}</span></div>
+        <div class="view-date">${esc(fmtDate(e.date))} &nbsp;.&nbsp; <span class="sub-team-badge ${esc(teamCls)}" style="font-size:11px;">${esc(teamLabel)}</span> &nbsp;<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface2);color:var(--text-sec);font-weight:600;">${esc(typeLabel)}</span> &nbsp;<span class="site-badge ${esc(e.site||getSite(e.operator))}">${esc(e.site||getSite(e.operator))==='SD'?'🇺🇸 SD':'🇨🇳 SH'}</span></div>
       </div>
     </div>
     <div class="view-fields">
@@ -1338,6 +1430,7 @@ function openEditModal(id) {
   document.getElementById('f-projecttype').value = entry.projecttype || '';
   document.getElementById('f-batchid').value     = entry.batchid || '';
   document.getElementById('f-notes').value       = entry.notes || '';
+  onOperatorChange();
   const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
   activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
   if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
@@ -1371,6 +1464,7 @@ function copySubmission(id) {
   document.getElementById('f-projecttype').value = entry.projecttype || '';
   document.getElementById('f-batchid').value     = entry.batchid || '';
   document.getElementById('f-notes').value       = entry.notes || '';
+  onOperatorChange();
   const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
   activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
   if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
@@ -1385,6 +1479,7 @@ async function saveEntry() {
   const operator       = document.getElementById('f-operator').value;
   const team           = document.getElementById('f-team').value;
   const submissiontype = currentSubmissionType || 'dp';
+  const site           = getSite(operator);
   const lnpstage       = document.getElementById('f-lnpstage').value;
   const dsstage        = document.getElementById('f-dsstage').value;
   const projecttype    = document.getElementById('f-projecttype').value;
@@ -1405,12 +1500,12 @@ async function saveEntry() {
   try {
     if (editingId) {
       const entry   = data.find(e=>e.id===editingId);
-      const updated = { ...entry, date, samples, operator, team, assays, submissiontype, lnpstage, dsstage, projecttype, batchid, notes };
+      const updated = { ...entry, date, samples, operator, team, assays, submissiontype, site, lnpstage, dsstage, projecttype, batchid, notes };
       await apiFetch('/'+entry.airtableId, { method: 'PATCH', body: JSON.stringify({ fields: entryToFields(updated) }) });
       const idx = data.findIndex(e=>e.id===editingId); if (idx !== -1) data[idx] = updated;
       showToast('Submission updated.');
     } else {
-      const newEntry = { id: uid(), date, samples, operator, team, assays, submissiontype, lnpstage, dsstage, projecttype, batchid, notes };
+      const newEntry = { id: uid(), date, samples, operator, team, assays, submissiontype, site, lnpstage, dsstage, projecttype, batchid, notes };
       const res = await apiFetch('', { method: 'POST', body: JSON.stringify({ fields: entryToFields(newEntry) }) });
       newEntry.airtableId = res.id; data.push(newEntry);
       showToast('Submission added!');
@@ -1485,7 +1580,7 @@ function renderEntryCard(e, compact) {
         </div>
       </div>
     </td>
-    <td style="white-space:nowrap;">${typeBadge} <span class="sub-team-badge ${esc(teamCls)}">${esc(teamLabel)}</span></td>
+    <td style="white-space:nowrap;">${typeBadge} <span class="sub-team-badge ${esc(teamCls)}">${esc(teamLabel)}</span> <span class="site-badge ${esc(e.site||getSite(e.operator))}">${esc(e.site||getSite(e.operator))==='SD'?'🇺🇸 SD':'🇨🇳 SH'}</span></td>
     <td style="font-weight:600;font-size:13px;">${esc(String(e.samples))}<span style="font-size:10px;font-weight:400;color:var(--text-sec);"> smp</span></td>
     <td class="td-assays"><div class="assay-tags-wrap">${assayTags}</div></td>
     <td class="td-meta">${metaParts}${notesPart}</td>
@@ -1511,12 +1606,14 @@ function populateFilterDropdowns() {
     + '<optgroup label="Drug Substance">' + DS_ASSAYS.map(a=>'<option value="'+esc(a.key)+'"'+(a.key===curA?' selected':'')+'>'+esc(a.label)+'</option>').join('') + '</optgroup>';
 }
 function renderSubmissions() {
+  const site     = document.getElementById('filter-site').value;
   const team     = document.getElementById('filter-team').value;
   const operator = document.getElementById('filter-operator').value;
   const assay    = document.getElementById('filter-assay').value;
   const from     = document.getElementById('filter-from').value;
   const to       = document.getElementById('filter-to').value;
   let filtered = data.filter(e => {
+    if (site     && (e.site||getSite(e.operator)) !== site) return false;
     if (team     && e.team !== team)         return false;
     if (operator && e.operator !== operator) return false;
     if (assay    && !(e.assays && e.assays[assay])) return false;
@@ -1535,7 +1632,7 @@ function renderSubmissions() {
       + `</tbody></table></div>`;
 }
 function clearFilters() {
-  ['filter-team','filter-operator','filter-assay'].forEach(id => document.getElementById(id).value='');
+  ['filter-site','filter-team','filter-operator','filter-assay'].forEach(id => document.getElementById(id).value='');
   ['filter-from','filter-to'].forEach(id => document.getElementById(id).value='');
   renderSubmissions();
 }
@@ -1578,6 +1675,26 @@ function renderSummary() {
     { label:'Upcoming',    value:dsUpcoming,      sub:'from today' },
   ].map(s=>`<div class="stat-card"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.value}</div><div class="stat-sub">${esc(s.sub)}</div></div>`).join('');
 
+  // ── SD stat mini-cards ──
+  const sdData     = data.filter(e=>(e.site||getSite(e.operator))==='SD');
+  const sdSamples  = sdData.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
+  const sdUpcoming = sdData.filter(e=>e.date>=today).length;
+  document.getElementById('stats-grid-sd').innerHTML = [
+    { label:'Submissions', value:sdData.length, sub:'San Diego' },
+    { label:'Samples',     value:sdSamples,      sub:'SD samples' },
+    { label:'Upcoming',    value:sdUpcoming,     sub:'from today' },
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.value}</div><div class="stat-sub">${esc(s.sub)}</div></div>`).join('');
+
+  // ── SH stat mini-cards ──
+  const shData     = data.filter(e=>(e.site||getSite(e.operator))==='SH');
+  const shSamples  = shData.reduce((s,e)=>s+(parseInt(e.samples)||0),0);
+  const shUpcoming = shData.filter(e=>e.date>=today).length;
+  document.getElementById('stats-grid-sh').innerHTML = [
+    { label:'Submissions', value:shData.length, sub:'Shanghai' },
+    { label:'Samples',     value:shSamples,      sub:'SH samples' },
+    { label:'Upcoming',    value:shUpcoming,     sub:'from today' },
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.value}</div><div class="stat-sub">${esc(s.sub)}</div></div>`).join('');
+
   // ── Assay breakdowns ──
   renderAssayBreakdown();
 
@@ -1585,19 +1702,21 @@ function renderSummary() {
   function buildOpTable(subset, elId) {
     const opStats = Object.create(null); // prototype-free — prevents __proto__ pollution
     subset.forEach(e => {
-      if (!opStats[e.operator]) opStats[e.operator] = { team:e.team, subs:0, samples:0 };
+      if (!opStats[e.operator]) opStats[e.operator] = { team:e.team, site:e.site||getSite(e.operator), subs:0, samples:0 };
       opStats[e.operator].subs++;
       opStats[e.operator].samples += parseInt(e.samples)||0;
     });
     const sorted = Object.entries(opStats).sort((a,b)=>b[1].subs-a[1].subs);
     document.getElementById(elId).innerHTML = !sorted.length
       ? '<p style="color:var(--text-sec);font-size:13px;">No data yet.</p>'
-      : `<table class="operator-table"><thead><tr><th>Operator</th><th>Team</th><th>Subs</th><th>Samples</th></tr></thead><tbody>`
-        + sorted.map(([name,s])=>`<tr><td><strong>${esc(name)}</strong></td><td><span class="sub-team-badge ${s.team==='production'?'prod':s.team==='mrna'?'mrna':'anal'}">${s.team==='production'?'Formulations':s.team==='mrna'?'mRNA':'Analytical'}</span></td><td>${s.subs}</td><td>${s.samples}</td></tr>`).join('')
+      : `<table class="operator-table"><thead><tr><th>Operator</th><th>Site</th><th>Team</th><th>Subs</th><th>Samples</th></tr></thead><tbody>`
+        + sorted.map(([name,s])=>`<tr><td><strong>${esc(name)}</strong></td><td><span class="site-badge ${esc(s.site)}">${s.site==='SD'?'🇺🇸 SD':'🇨🇳 SH'}</span></td><td><span class="sub-team-badge ${s.team==='production'?'prod':s.team==='mrna'?'mrna':'anal'}">${s.team==='production'?'Formulations':s.team==='mrna'?'mRNA':'Analytical'}</span></td><td>${s.subs}</td><td>${s.samples}</td></tr>`).join('')
         + `</tbody></table>`;
   }
   buildOpTable(dpData, 'operator-breakdown-dp');
   buildOpTable(dsData, 'operator-breakdown-ds');
+  buildOpTable(sdData, 'operator-breakdown-sd');
+  buildOpTable(shData, 'operator-breakdown-sh');
 
   // ── Upcoming ──
   const next14 = new Date(); next14.setDate(next14.getDate()+14);
