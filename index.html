@@ -1490,10 +1490,10 @@ function renderEntryCard(e, compact) {
     <td class="td-assays"><div class="assay-tags-wrap">${assayTags}</div></td>
     <td class="td-meta">${metaParts}${notesPart}</td>
     <td class="td-actions">
-      <button onclick="openViewModal('${e.id}')">View</button>
-      <button onclick="openEditModal('${e.id}')">Edit</button>
-      <button onclick="copySubmission('${e.id}')">Copy</button>
-      <button class="del-btn" onclick="confirmDelete('${e.id}')">Del</button>
+      <button onclick="openViewModal('${esc(e.id)}')">View</button>
+      <button onclick="openEditModal('${esc(e.id)}')">Edit</button>
+      <button onclick="copySubmission('${esc(e.id)}')">Copy</button>
+      <button class="del-btn" onclick="confirmDelete('${esc(e.id)}')">Del</button>
     </td>
   </tr>`;
 }
