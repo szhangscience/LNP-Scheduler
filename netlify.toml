@@ -5,6 +5,21 @@
   publish   = "."          # folder containing your index.html
   functions = "netlify/functions"
 
+# Security headers applied to every response
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Prevent the page from being embedded in iframes on other sites (clickjacking)
+    X-Frame-Options = "SAMEORIGIN"
+    # Stop browsers guessing content types (MIME sniffing attacks)
+    X-Content-Type-Options = "nosniff"
+    # Only send referrer info to same origin
+    Referrer-Policy = "same-origin"
+    # Restrict browser features the page can use
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # Content Security Policy — scripts/styles from same origin only; API calls to self only
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none';"
+
 # Redirect all /api/* requests to the function — keeps URLs tidy
 # and means you could add more functions later without changing the frontend.
 [[redirects]]
