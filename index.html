@@ -35,10 +35,13 @@
   .logo { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; white-space: nowrap; }
   .logo span { color: var(--blue-border); }
   .sync-indicator { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-hint); }
-  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-border); flex-shrink: 0; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-border); flex-shrink: 0; transition: background 0.3s; }
   .sync-dot.syncing { background: var(--amber-text); animation: pulse 1s ease-in-out infinite; }
   .sync-dot.error { background: var(--red-border); }
+  .sync-dot.flash { animation: live-flash 0.7s ease-out; }
   @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+  @keyframes live-flash { 0%{transform:scale(1);box-shadow:0 0 0 0 rgba(15,110,86,0.5);} 50%{transform:scale(1.5);box-shadow:0 0 0 4px rgba(15,110,86,0);} 100%{transform:scale(1);box-shadow:0 0 0 0 rgba(15,110,86,0);} }
+  .live-badge { font-size: 9px; font-weight: 700; color: var(--teal-text); background: var(--teal-bg); padding: 1px 5px; border-radius: 4px; letter-spacing: 0.3px; }
   nav { display: flex; gap: 2px; margin-left: auto; }
   nav button { background: none; border: none; padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-sec); cursor: pointer; transition: background 0.12s, color 0.12s; white-space: nowrap; }
   nav button:hover { background: var(--surface2); color: var(--text); }
@@ -265,9 +268,13 @@
 
 
   /* Operator colour palette */
-  .op-Young   { background: #e8f4fd; border-left-color: #1565c0 !important; }
-  .op-Stanley { background: #fde8f0; border-left-color: #c2185b !important; }
+  .op-Young     { background: #e8f4fd; border-left-color: #1565c0 !important; }
+  .op-Stanley   { background: #fde8f0; border-left-color: #c2185b !important; }
   .op-Christian { background: #fff3e0; border-left-color: #e65100 !important; }
+  .op-Wu-Tinghua  { background: #f3e8fd; border-left-color: #6a1b9a !important; }
+  .op-Zhao-Jingyu { background: #e8fdf3; border-left-color: #00695c !important; }
+  .op-Wang-Mingli { background: #fdf3e8; border-left-color: #bf360c !important; }
+  .op-Xu-Anqi     { background: #e8f0fd; border-left-color: #283593 !important; }
 
   /* EE-only assay tag */
   .assay-EEOnly { background: #fff3cd; color: #7b4f00; }
@@ -324,6 +331,7 @@
     <div class="sync-indicator">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Synced</span>
+      <span class="live-badge" id="live-badge" style="display:none;">LIVE</span>
     </div>
     <nav>
       <button class="active" onclick="switchPage('calendar')">Calendar</button>
@@ -534,6 +542,10 @@
                   <option value="Young">Young</option>
                   <option value="Stanley">Stanley</option>
                   <option value="Christian">Christian</option>
+                  <option value="Wu Tinghua">Wu Tinghua</option>
+                  <option value="Zhao Jingyu">Zhao Jingyu</option>
+                  <option value="Wang Mingli">Wang Mingli</option>
+                  <option value="Xu Anqi">Xu Anqi</option>
                 </select>
               </div>
               <div class="form-row"><label>Team *</label>
@@ -704,8 +716,12 @@ let viewingId = null;
    Sync indicator / loading / toast
    --------------------------------------------- */
 function setSyncState(s) {
-  document.getElementById('sync-dot').className = 'sync-dot'+(s==='syncing'?' syncing':s==='error'?' error':'');
-  document.getElementById('sync-label').textContent = s==='syncing'?'Syncing...':s==='error'?'Sync error':'Synced';
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  const badge = document.getElementById('live-badge');
+  dot.className   = 'sync-dot' + (s==='syncing'?' syncing':s==='error'?' error':'');
+  label.textContent = s==='syncing'?'Syncing...':s==='error'?'Sync error':s==='live'?'Live':'Synced';
+  badge.style.display = s==='live' ? '' : 'none';
 }
 function showLoading(on, msg) {
   document.getElementById('loading-overlay').classList.toggle('hidden', !on);
@@ -771,6 +787,7 @@ async function refreshData() {
   setSyncState('syncing'); showLoading(true, 'Loading submissions...');
   try {
     data = (await loadAllRecords()).map(recordToEntry);
+    lastFingerprint = dataFingerprint(data);
     setSyncState('ok');
   } catch(e) {
     setSyncState('error'); showToast('Could not load data: ' + e.message, true);
@@ -780,6 +797,70 @@ async function refreshData() {
   if (active === 'page-calendar')    renderCalendar();
   if (active === 'page-submissions') { populateFilterDropdowns(); renderSubmissions(); }
   if (active === 'page-summary')     renderSummary();
+}
+
+/* ---------------------------------------------
+   Live polling — auto-syncs every 20 s
+   --------------------------------------------- */
+const POLL_INTERVAL   = 5000; // ms
+let   pollTimer       = null;
+let   lastFingerprint = '';
+let   isAnyModalOpen  = false;
+let   pendingRefresh  = false;
+
+function dataFingerprint(arr) {
+  // A cheap stable hash: sort by airtable ID, join key fields
+  return arr.map(r => r.airtableId + '|' + r.date + '|' + r.samples + '|' + r.operator + '|' + r.submissiontype)
+            .sort().join(';');
+}
+
+function rerenderCurrentPage() {
+  const active = document.querySelector('.page.active').id;
+  if (active === 'page-calendar')    renderCalendar();
+  if (active === 'page-submissions') { populateFilterDropdowns(); renderSubmissions(); }
+  if (active === 'page-summary')     renderSummary();
+}
+
+async function pollForUpdates() {
+  try {
+    const fresh = (await loadAllRecords()).map(recordToEntry);
+    const fp    = dataFingerprint(fresh);
+    if (fp === lastFingerprint) return; // nothing changed
+    // Data changed — update local store
+    data            = fresh;
+    lastFingerprint = fp;
+    if (isAnyModalOpen) {
+      // Defer re-render until the modal closes
+      pendingRefresh = true;
+      return;
+    }
+    rerenderCurrentPage();
+    // Visual feedback: flash the dot
+    const dot = document.getElementById('sync-dot');
+    dot.classList.add('flash');
+    setTimeout(() => dot.classList.remove('flash'), 800);
+    showToast('🔄 Live update received');
+  } catch(e) {
+    // Silent fail for background polls — don't distract the user
+    console.warn('[poll]', e.message);
+  }
+}
+
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(pollForUpdates, POLL_INTERVAL);
+  setSyncState('live');
+}
+
+function setModalOpen(open) {
+  isAnyModalOpen = open;
+  if (!open && pendingRefresh) {
+    pendingRefresh = false;
+    rerenderCurrentPage();
+    // Brief "Synced" flash before going back to Live
+    setSyncState('ok');
+    setTimeout(() => setSyncState('live'), 1200);
+  }
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -894,7 +975,7 @@ function renderWeekCalendar() {
     cell.style.cssText = 'background:var(--surface);padding:5px;display:flex;flex-direction:column;gap:4px;min-height:80px;';
     d.dpEntries.forEach(function(e) {
       var div = document.createElement('div');
-      div.className = 'week-entry op-'+e.operator;
+      div.className = 'week-entry op-'+e.operator.replace(/\s+/g,'-');
       var tags = ASSAYS.filter(function(a){ return e.assays&&e.assays[a.key]; }).map(function(a) {
         if (a.key==='ribogreen' && e.assays.eeonly) return '<span class="week-entry-assay-tag assay-EEOnly">%EE Only</span>';
         return '<span class="week-entry-assay-tag '+esc(ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
@@ -934,7 +1015,7 @@ function renderWeekCalendar() {
     cell.style.cssText = 'background:var(--surface);padding:5px;display:flex;flex-direction:column;gap:4px;min-height:80px;';
     d.dsEntries.forEach(function(e) {
       var div = document.createElement('div');
-      div.className = 'week-entry-ds op-'+e.operator;
+      div.className = 'week-entry-ds op-'+e.operator.replace(/\s+/g,'-');
       var tags = DS_ASSAYS.filter(function(a){ return e.assays&&e.assays[a.key]; }).map(function(a) {
         return '<span class="week-entry-assay-tag '+esc(DS_ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
       }).join('');
@@ -1033,9 +1114,13 @@ function renderLegend() {
     '<div class="legend-item"><div class="legend-dot '+esc(DS_ASSAY_COLORS[a.key])+'" style="background:currentColor;opacity:0.7"></div>'+esc(a.label)+'</div>'
   ).join('');
   const opLegend = [
-    {name:'Young',   bg:'#e8f4fd', border:'#1565c0'},
-    {name:'Stanley', bg:'#fde8f0', border:'#c2185b'},
-    {name:'Christian', bg:'#fff3e0', border:'#e65100'},
+    {name:'Young',       bg:'#e8f4fd', border:'#1565c0'},
+    {name:'Stanley',     bg:'#fde8f0', border:'#c2185b'},
+    {name:'Christian',   bg:'#fff3e0', border:'#e65100'},
+    {name:'Wu Tinghua',  bg:'#f3e8fd', border:'#6a1b9a'},
+    {name:'Zhao Jingyu', bg:'#e8fdf3', border:'#00695c'},
+    {name:'Wang Mingli', bg:'#fdf3e8', border:'#bf360c'},
+    {name:'Xu Anqi',     bg:'#e8f0fd', border:'#283593'},
   ].map(o =>
     '<div class="legend-item"><div class="op-legend-dot" style="background:'+o.bg+';border:2px solid '+o.border+';border-radius:3px;width:12px;height:9px;"></div>'+o.name+'</div>'
   ).join('');
@@ -1085,12 +1170,14 @@ function openViewModal(id) {
   document.getElementById('view-edit-btn').onclick   = () => { closeViewModal(); openEditModal(id); };
   document.getElementById('view-copy-btn').onclick   = () => { closeViewModal(); copySubmission(id); };
   document.getElementById('view-delete-btn').onclick = () => confirmDeleteFromView(id);
+  setModalOpen(true);
   document.getElementById('view-modal-overlay').classList.add('open');
 }
 
 function closeViewModal() {
   document.getElementById('view-modal-overlay').classList.remove('open');
   viewingId = null;
+  setModalOpen(false);
 }
 
 async function confirmDeleteFromView(id) {
@@ -1100,7 +1187,8 @@ async function confirmDeleteFromView(id) {
   try {
     await apiFetch('/'+entry.airtableId, { method: 'DELETE' });
     data = data.filter(e=>e.id!==id);
-    setSyncState('ok'); showToast('Submission deleted.');
+    lastFingerprint = dataFingerprint(data);
+    setSyncState('live'); showToast('Submission deleted.');
     closeViewModal();
     const active = document.querySelector('.page.active').id;
     if (active==='page-calendar')    renderCalendar();
@@ -1224,6 +1312,7 @@ function openAddModal(date) {
   document.getElementById('f-notes').value       = '';
   document.getElementById('f-ee-only').checked   = false;
   document.getElementById('ee-option').classList.remove('show');
+  setModalOpen(true);
   document.getElementById('modal-overlay').classList.add('open');
 }
 function openEditModal(id) {
@@ -1250,12 +1339,14 @@ function openEditModal(id) {
   const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
   activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
   if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
+  setModalOpen(true);
   document.getElementById('modal-overlay').classList.add('open');
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
   editingId = null;
   document.getElementById('save-btn').style.display = '';
+  setModalOpen(false);
 }
 
 function copySubmission(id) {
@@ -1281,6 +1372,7 @@ function copySubmission(id) {
   const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
   activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
   if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
+  setModalOpen(true);
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('f-date').focus();
 }
@@ -1321,7 +1413,8 @@ async function saveEntry() {
       newEntry.airtableId = res.id; data.push(newEntry);
       showToast('Submission added!');
     }
-    setSyncState('ok');
+    lastFingerprint = dataFingerprint(data); // prevent next poll from re-rendering our own change
+    setSyncState('live');
   } catch(e) {
     setSyncState('error'); showToast('Save failed: '+e.message, true);
     saveBtn.disabled = false; saveBtn.textContent = 'Save Submission'; return;
@@ -1341,7 +1434,8 @@ async function deleteEntry() {
   try {
     await apiFetch('/'+entry.airtableId, { method: 'DELETE' });
     data = data.filter(e=>e.id!==editingId);
-    setSyncState('ok'); showToast('Submission deleted.');
+    lastFingerprint = dataFingerprint(data);
+    setSyncState('live'); showToast('Submission deleted.');
   } catch(e) { setSyncState('error'); showToast('Delete failed: '+e.message, true); return; }
   closeModal(); renderCalendar();
 }
@@ -1352,7 +1446,7 @@ function confirmDelete(id) {
   setSyncState('syncing');
   apiFetch('/'+entry.airtableId, { method: 'DELETE' })
     .then(() => {
-      data = data.filter(e=>e.id!==id); setSyncState('ok'); showToast('Submission deleted.');
+      data = data.filter(e=>e.id!==id); lastFingerprint = dataFingerprint(data); setSyncState('live'); showToast('Submission deleted.');
       const a = document.querySelector('.page.active').id;
       if (a==='page-calendar')    renderCalendar();
       if (a==='page-submissions') renderSubmissions();
@@ -1592,7 +1686,7 @@ function renderAssayBreakdown() {
    Init
    --------------------------------------------- */
 buildAssayGrid();
-refreshData();
+refreshData().then(() => startPolling());
 </script>
 </body>
 </html>
