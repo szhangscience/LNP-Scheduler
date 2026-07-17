@@ -102,7 +102,8 @@
   .week-col-header .wday { font-size: 9px; font-weight: 600; color: var(--text-sec); letter-spacing: 0.5px; text-transform: uppercase; }
   .week-col-header .wdate { font-size: 18px; font-weight: 600; color: var(--text); line-height: 1.2; margin-top: 2px; }
   .week-col.today .week-col-header .wdate { color: var(--blue-text); }
-  .week-col-header .wsamples { font-size: 9px; color: var(--text-hint); margin-top: 2px; min-height: 12px; }
+  .week-col-header .wsamples { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-top: 5px; min-height: 16px; }
+  .day-assay-tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.3px; white-space: nowrap; }
   .week-col-body { flex: 1; padding: 5px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 400px; }
   .week-entry { padding: 6px 8px; border-radius: 6px; border-left: 3px solid var(--blue-border); background: var(--blue-bg); cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
   .week-entry:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
@@ -754,13 +755,17 @@ const DS_STAGES = ['IP DS','UF/DF DS','BLK DS','F/T DS'];
 
 /* Assays available to run each day of the week (0=Sun … 6=Sat) */
 const DAILY_ASSAYS = {
-  1: 'RG · CE',
-  2: 'RG · HPLC Lipids',
-  3: 'RG · BCA',
-  4: 'RG · HPLC Lipids',
-  5: 'RG · BCA',
+  1: [{ label:'RG',          cls:'assay-Ribogreen'   }, { label:'CE',          cls:'assay-CE-mRNA'     }],
+  2: [{ label:'RG',          cls:'assay-Ribogreen'   }, { label:'HPLC Lipids', cls:'assay-HPLC-Lipids' }],
+  3: [{ label:'RG',          cls:'assay-Ribogreen'   }, { label:'BCA',         cls:'assay-BCA'         }],
+  4: [{ label:'RG',          cls:'assay-Ribogreen'   }, { label:'HPLC Lipids', cls:'assay-HPLC-Lipids' }],
+  5: [{ label:'RG',          cls:'assay-Ribogreen'   }, { label:'BCA',         cls:'assay-BCA'         }],
 };
-function getDayAssays(dayOfWeek) { return DAILY_ASSAYS[dayOfWeek] || '—'; }
+function getDayAssaysHtml(dayOfWeek) {
+  const assays = DAILY_ASSAYS[dayOfWeek];
+  if (!assays) return '<span style="color:var(--text-hint);font-size:9px;">—</span>';
+  return assays.map(a => `<span class="day-assay-tag ${a.cls}">${a.label}</span>`).join('');
+}
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MOS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1055,7 +1060,7 @@ function renderWeekCalendar() {
     hdrCell.style.cssText = 'padding:8px 5px 6px;text-align:center;border-bottom:0.5px solid var(--border);background:' + (d.isToday ? 'var(--blue-bg)' : 'var(--surface2)') + ';cursor:pointer;';
     hdrCell.innerHTML = '<div class="wday">'+esc(DAYS[d.date.getDay()])+'</div>'
       +'<div class="wdate" style="font-size:18px;font-weight:600;color:'+(d.isToday?'var(--blue-text)':'var(--text)')+';">'+d.date.getDate()+'</div>'
-      +'<div class="wsamples">'+esc(getDayAssays(d.date.getDay()))+'</div>';
+      +'<div class="wsamples">'+getDayAssaysHtml(d.date.getDay())+'</div>';
     (function(dayObj) {
       hdrCell.onclick = function() { openPanel(new Date(dayObj.ds+'T12:00:00'), data.filter(function(e){ return e.date===dayObj.ds; }), dayObj.ds); };
     })(d);
