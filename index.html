@@ -809,7 +809,7 @@ function entryToFields(e) {
     samples:         Number(e.samples),
     assays:          JSON.stringify(e.assays),
     submissiontype:  e.submissiontype || 'dp',
-    site:            e.site || getSite(e.operator),
+    // site is derived locally from operator via getSite() — not stored in Airtable
     lnpstage:        e.lnpstage || '',
     dsstage:         e.dsstage || '',
     projecttype:     e.projecttype || '',
@@ -855,7 +855,7 @@ async function refreshData() {
   try {
     data = (await loadAllRecords()).map(recordToEntry);
     lastFingerprint = dataFingerprint(data);
-    setSyncState('ok');
+    setSyncState('live');
   } catch(e) {
     setSyncState('error'); showToast('Could not load data: ' + e.message, true);
   }
