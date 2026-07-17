@@ -751,6 +751,16 @@ const DS_ASSAY_COLORS = {
   od260:'assay-OD260', dscemrna:'assay-CE-mRNA', polya:'assay-PolyA', fivecap:'assay-FiveCap'
 };
 const DS_STAGES = ['IP DS','UF/DF DS','BLK DS','F/T DS'];
+
+/* Assays available to run each day of the week (0=Sun … 6=Sat) */
+const DAILY_ASSAYS = {
+  1: 'RG · CE',
+  2: 'RG · HPLC Lipids',
+  3: 'RG · BCA',
+  4: 'RG · HPLC Lipids',
+  5: 'RG · BCA',
+};
+function getDayAssays(dayOfWeek) { return DAILY_ASSAYS[dayOfWeek] || '—'; }
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MOS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1045,7 +1055,7 @@ function renderWeekCalendar() {
     hdrCell.style.cssText = 'padding:8px 5px 6px;text-align:center;border-bottom:0.5px solid var(--border);background:' + (d.isToday ? 'var(--blue-bg)' : 'var(--surface2)') + ';cursor:pointer;';
     hdrCell.innerHTML = '<div class="wday">'+esc(DAYS[d.date.getDay()])+'</div>'
       +'<div class="wdate" style="font-size:18px;font-weight:600;color:'+(d.isToday?'var(--blue-text)':'var(--text)')+';">'+d.date.getDate()+'</div>'
-      +'<div class="wsamples">'+esc(d.sl)+'</div>';
+      +'<div class="wsamples">'+esc(getDayAssays(d.date.getDay()))+'</div>';
     (function(dayObj) {
       hdrCell.onclick = function() { openPanel(new Date(dayObj.ds+'T12:00:00'), data.filter(function(e){ return e.date===dayObj.ds; }), dayObj.ds); };
     })(d);
