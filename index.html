@@ -264,8 +264,8 @@
   /* Workload tracker */
   .wl-wrap { margin-top: 14px; }
   .wl-title { font-size: 12px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-  .wl-table { border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .wl-row { display: grid; grid-template-columns: 110px repeat(5, 1fr); border-bottom: 0.5px solid var(--border); }
+  .wl-table { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .wl-row { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 0.5px solid var(--border); }
   .wl-row:last-child { border-bottom: none; }
   .wl-label-cell { padding: 7px 8px; display: flex; align-items: center; background: var(--surface2); border-right: 0.5px solid var(--border); }
   .wl-day-hdr { padding: 5px 4px; text-align: center; font-size: 9px; font-weight: 700; color: var(--text-sec); letter-spacing: 0.4px; text-transform: uppercase; border-right: 0.5px solid var(--border); background: var(--surface2); line-height: 1.4; }
@@ -1206,12 +1206,13 @@ function renderWorkload() {
   if (calView !== 'week') { section.style.display = 'none'; return; }
   section.style.display = '';
 
-  // Mon–Fri of the current week
-  var weekdays = [];
-  for (var i = 1; i <= 5; i++) {
+  // All 7 days of the current week (Sun–Sat), matching calendar column order
+  var allDays = [];
+  for (var i = 0; i < 7; i++) {
     var d = new Date(weekStart); d.setDate(d.getDate() + i);
-    weekdays.push({ date: d, ds: dateStr(d), dow: i });
+    allDays.push({ date: d, ds: dateStr(d), dow: d.getDay() });
   }
+  var weekdays = allDays.slice(1, 6); // Mon–Fri only
 
   function countSamples(ds, key) {
     return data.filter(function(e){ return e.date===ds && e.assays && e.assays[key]; })
@@ -1219,18 +1220,20 @@ function renderWorkload() {
   }
 
   var html = '<div class="wl-table">';
-  // Header
+
+  // Header row — Sun slot = blank label header, Sat slot = empty
   html += '<div class="wl-row">';
-  html += '<div class="wl-label-cell"></div>';
+  html += '<div class="wl-label-cell"></div>'; // Sun slot
   weekdays.forEach(function(d) {
     html += '<div class="wl-day-hdr">'+DAYS[d.date.getDay()]+'<br><span style="font-size:9px;font-weight:400;">'+MOS[d.date.getMonth()]+' '+d.date.getDate()+'</span></div>';
   });
+  html += '<div class="wl-cell wl-na"></div>'; // Sat slot
   html += '</div>';
 
-  // Assay rows
+  // Assay rows — label in Sun slot, Mon–Fri data, empty Sat slot
   ASSAY_CAPACITY.forEach(function(a) {
     html += '<div class="wl-row">';
-    html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>';
+    html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>'; // Sun slot
     weekdays.forEach(function(d) {
       if (!a.days.has(d.dow)) {
         html += '<div class="wl-cell wl-na">—</div>';
@@ -1244,6 +1247,7 @@ function renderWorkload() {
           + '</div>';
       }
     });
+    html += '<div class="wl-cell wl-na"></div>'; // Sat slot
     html += '</div>';
   });
 
