@@ -754,17 +754,17 @@ function validateEntry({ date, samples, operator }) {
    Constants
    --------------------------------------------- */
 const ASSAYS = [
-  { key:'ribogreen',  label:'Ribogreen',   sub:'RNA quantification' },
-  { key:'bca',        label:'BCA',         sub:'Protein quantification' },
-  { key:'cemrna',     label:'CE mRNA',     sub:'Capillary electrophoresis' },
-  { key:'fa',         label:'FA',          sub:'Formulation analysis' },
-  { key:'hplclipids', label:'HPLC Lipids', sub:'Lipid profiling' },
-  { key:'hplcab',     label:'HPLC Ab',     sub:'Antibody analysis' },
-  { key:'od280',      label:'OD280',       sub:'Protein UV absorbance' },
-  { key:'tns',        label:'TNS',         sub:'Zeta potential / charge' },
-  { key:'massspec',   label:'Mass Spec',   sub:'Mass spectrometry (MS)' },
-  { key:'riboendcap', label:'Ribo Endcap', sub:'Ribogreen encapsulation' },
-  { key:'elisadsrna', label:'Elisa dsRNA', sub:'Double-stranded RNA ELISA' },
+  { key:'ribogreen',  label:'Ribogreen',      sub:'RNA quantification' },
+  { key:'riboendcap', label:'RG Encap Only',  sub:'Ribogreen encapsulation only' },
+  { key:'bca',        label:'BCA',            sub:'Protein quantification' },
+  { key:'cemrna',     label:'CE mRNA',        sub:'Capillary electrophoresis' },
+  { key:'fa',         label:'FA',             sub:'Formulation analysis' },
+  { key:'hplclipids', label:'HPLC Lipids',   sub:'Lipid profiling' },
+  { key:'hplcab',     label:'HPLC Ab',        sub:'Antibody analysis' },
+  { key:'od280',      label:'OD280',          sub:'Protein UV absorbance' },
+  { key:'tns',        label:'TNS',            sub:'Zeta potential / charge' },
+  { key:'massspec',   label:'Mass Spec',      sub:'Mass spectrometry (MS)' },
+  { key:'elisadsrna', label:'Elisa dsRNA',    sub:'Double-stranded RNA ELISA' },
 ];
 const ASSAY_COLORS = {
   ribogreen:'assay-Ribogreen', bca:'assay-BCA', cemrna:'assay-CE-mRNA',
@@ -790,10 +790,10 @@ const DS_STAGES = ['IP DS','UF/DF DS','BLK DS','F/T DS'];
 /* Assays available to run each day of the week (0=Sun … 6=Sat) */
 const DAILY_ASSAYS = {
   1: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'TNS',    cls:'assay-TNS'         }],
-  2: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'RG-E',   cls:'assay-RiboEndcap'  }, { label:'Lipids', cls:'assay-HPLC-Lipids' }, { label:'TNS', cls:'assay-TNS' }, { label:"5'Cap", cls:'assay-FiveCap' }, { label:'PolyA', cls:'assay-PolyA' }],
-  3: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'RG-E',   cls:'assay-RiboEndcap'  }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'BCA',    cls:'assay-BCA'         }],
-  4: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'RG-E',   cls:'assay-RiboEndcap'  }, { label:'Lipids', cls:'assay-HPLC-Lipids' }],
-  5: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'RG-E',   cls:'assay-RiboEndcap'  }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'BCA',    cls:'assay-BCA'         }, { label:'TNS', cls:'assay-TNS' }],
+  2: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'Lipids', cls:'assay-HPLC-Lipids' }, { label:'TNS', cls:'assay-TNS' }, { label:"5'Cap", cls:'assay-FiveCap' }, { label:'PolyA', cls:'assay-PolyA' }],
+  3: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'BCA',    cls:'assay-BCA'         }],
+  4: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'Lipids', cls:'assay-HPLC-Lipids' }],
+  5: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'BCA',    cls:'assay-BCA'         }, { label:'TNS', cls:'assay-TNS' }],
 };
 function getDayAssaysHtml(dayOfWeek) {
   const assays = DAILY_ASSAYS[dayOfWeek];
@@ -804,7 +804,7 @@ function getDayAssaysHtml(dayOfWeek) {
 /* Max samples per assay per day — drives the workload tracker */
 const ASSAY_CAPACITY = [
   { key:'ribogreen',  label:'Ribo Total',  cls:'assay-Ribogreen',   days:new Set([1,2,3,4,5]), max:20 },
-  { key:'riboendcap', label:'Ribo Endcap', cls:'assay-RiboEndcap',  days:new Set([1,2,3,4,5]), max:20 },
+  { key:'riboendcap', label:'RG Encap Only', cls:'assay-RiboEndcap', days:new Set([1,2,3,4,5]), max:20 },
   { key:'hplclipids', label:'Lipids',      cls:'assay-HPLC-Lipids', days:new Set([2,4]),        max:15 },
   { key:'cemrna',     label:'CE',          cls:'assay-CE-mRNA',     days:new Set([1,3,5]),      max:10 },
   { key:'bca',        label:'BCA',         cls:'assay-BCA',         days:new Set([3,5]),        max:40 },
