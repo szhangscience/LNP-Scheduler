@@ -1216,7 +1216,7 @@ function renderWeekCalendar() {
 
 function renderWorkload() {
   var section = document.getElementById('workload-section');
-  if (calView !== 'week') { section.style.display = 'none'; return; }
+  if (calView !== 'week' || currentSite !== 'SH') { section.style.display = 'none'; return; }
   section.style.display = '';
 
   // All 7 days of the current week (Sun–Sat), matching calendar column order
