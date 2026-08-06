@@ -1254,12 +1254,20 @@ function renderWorkload() {
     html += '<div class="wl-row">';
     html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>';
     weekdays.forEach(function(d) {
+      var used = countSamples(d.ds, a.key, a.section);
       if (!a.days.has(d.dow)) {
-        html += '<div class="wl-cell wl-na">—</div>';
+        if (used === 0) {
+          html += '<div class="wl-cell wl-na">—</div>';
+        } else {
+          // Submitted on an unscheduled day — show as over-capacity against 0
+          html += '<div class="wl-cell wl-over">'
+            + '<div class="wl-count">'+used+'<span class="wl-max">/0</span></div>'
+            + '<div class="wl-bar-wrap"><div class="wl-bar" style="width:100%"></div></div>'
+            + '</div>';
+        }
       } else {
-        var used = countSamples(d.ds, a.key, a.section);
-        var pct  = Math.min(Math.round(used / a.max * 100), 100);
-        var cls  = pct >= 100 ? 'wl-over' : pct >= 75 ? 'wl-warn' : 'wl-ok';
+        var pct = Math.min(Math.round(used / a.max * 100), 100);
+        var cls = pct >= 100 ? 'wl-over' : pct >= 75 ? 'wl-warn' : 'wl-ok';
         html += '<div class="wl-cell '+cls+'">'
           + '<div class="wl-count">'+used+'<span class="wl-max">/'+a.max+'</span></div>'
           + '<div class="wl-bar-wrap"><div class="wl-bar" style="width:'+pct+'%"></div></div>'
