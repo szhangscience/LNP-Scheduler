@@ -804,20 +804,28 @@ function getDayAssaysHtml(dayOfWeek) {
    section: 'dp' = DP submissions; 'mrna' = DS/mRNA submissions (submissiontype==='ds') */
 const ASSAY_CAPACITY = [
   // ── Drug Product ──
-  { key:'ribogreen',  label:'Ribo Total',       cls:'assay-Ribogreen',   section:'dp',   days:new Set([1,2,3,4,5]), max:20 },
-  { key:'riboendcap', label:'RG Encap Only',    cls:'assay-RiboEndcap',  section:'dp',   days:new Set([1,2,3,4,5]), max:20 },
-  { key:'hplclipids', label:'HPLC Lipids',              cls:'assay-HPLC-Lipids', section:'dp',   days:new Set([2,4]),        max:15 },
-  { key:'cemrna',     label:'CE mRNA',                  cls:'assay-CE-mRNA',     section:'dp',   days:new Set([1]),          max:10 },
-  { key:'bca',        label:'BCA',                      cls:'assay-BCA',         section:'dp',   days:new Set([3,5]),        max:40 },
-  { key:'tns',        label:'TNS',                      cls:'assay-TNS',         section:'dp',   days:new Set([1,2,5]),      max:8  },
-  { key:'gelelectro', label:'Gel Electrophoresis (Ab)', cls:'assay-GelElectro',  section:'dp',   days:new Set([1,2]),        max:20 },
-  { key:'lipidslcms', label:'Lipids LCMS',              cls:'assay-LipidsLCMS',  section:'dp',   days:new Set([5]),          max:10 },
+  { key:'ribogreen',  label:'Ribo Total',              cls:'assay-Ribogreen',   section:'dp',   days:new Set([1,2,3,4,5]), max:20   },
+  { key:'riboendcap', label:'RG Encap Only',           cls:'assay-RiboEndcap',  section:'dp',   days:new Set([1,2,3,4,5]), max:20   },
+  { key:'hplclipids', label:'HPLC Lipids',             cls:'assay-HPLC-Lipids', section:'dp',   days:new Set([2,4]),        max:15   },
+  { key:'cemrna',     label:'CE mRNA',                 cls:'assay-CE-mRNA',     section:'dp',   days:new Set([1]),          max:10   },
+  { key:'bca',        label:'BCA',                     cls:'assay-BCA',         section:'dp',   days:new Set([3,5]),        max:40   },
+  { key:'tns',        label:'TNS',                     cls:'assay-TNS',         section:'dp',   days:new Set([1,2,5]),      max:8    },
+  { key:'gelelectro', label:'Gel Electrophoresis (Ab)',cls:'assay-GelElectro',  section:'dp',   days:new Set([1,2]),        max:20   },
+  { key:'lipidslcms', label:'Lipids LCMS',             cls:'assay-LipidsLCMS',  section:'dp',   days:new Set([5]),          max:10   },
+  { key:'fa',         label:'FA',                      cls:'assay-FA',          section:'dp',   days:new Set([1,2,3,4,5]), max:null },
+  { key:'hplcab',     label:'HPLC Ab',                 cls:'assay-HPLC-Ab',     section:'dp',   days:new Set([1,2,3,4,5]), max:null },
+  { key:'od280',      label:'OD280',                   cls:'assay-OD280',       section:'dp',   days:new Set([1,2,3,4,5]), max:null },
+  { key:'massspec',   label:'Mass Spec',               cls:'assay-MassSpec',    section:'dp',   days:new Set([1,2,3,4,5]), max:null },
   // ── mRNA ──
-  { key:'dscemrna',   label:'CE mRNA',                  cls:'assay-CE-mRNA',     section:'mrna', days:new Set([1,3,5]),      max:20 },
-  { key:'ribomrna',   label:'Ribo (Total)',              cls:'assay-Ribogreen',   section:'mrna', days:new Set([3,5]),        max:40 },
-  { key:'elisadsrna', label:'Elisa dsRNA',      cls:'assay-ElisaDsRNA',  section:'mrna', days:new Set([4]),          max:80 },
-  { key:'fivecap',    label:"5' Cap",           cls:'assay-FiveCap',     section:'mrna', days:new Set([2]),          max:10 },
-  { key:'polya',      label:'Poly A',           cls:'assay-PolyA',       section:'mrna', days:new Set([2]),          max:10 },
+  { key:'dscemrna',   label:'CE mRNA',                 cls:'assay-CE-mRNA',     section:'mrna', days:new Set([1,3,5]),      max:20   },
+  { key:'ribomrna',   label:'Ribo (Total)',             cls:'assay-Ribogreen',   section:'mrna', days:new Set([3,5]),        max:40   },
+  { key:'elisadsrna', label:'Elisa dsRNA',             cls:'assay-ElisaDsRNA',  section:'mrna', days:new Set([4]),          max:80   },
+  { key:'fivecap',    label:"5' Cap",                  cls:'assay-FiveCap',     section:'mrna', days:new Set([2]),          max:10   },
+  { key:'polya',      label:'Poly A',                  cls:'assay-PolyA',       section:'mrna', days:new Set([2]),          max:10   },
+  { key:'dotplot',    label:'Dot Plot',                cls:'assay-DotPlot',     section:'mrna', days:new Set([1,2,3,4,5]), max:null },
+  { key:'iprp',       label:'IP RP',                   cls:'assay-IPRP',        section:'mrna', days:new Set([1,2,3,4,5]), max:null },
+  { key:'dsfa',       label:'FA',                      cls:'assay-FA',          section:'mrna', days:new Set([1,2,3,4,5]), max:null },
+  { key:'od260',      label:'OD260',                   cls:'assay-OD260',       section:'mrna', days:new Set([1,2,3,4,5]), max:null },
 ];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1255,16 +1263,16 @@ function renderWorkload() {
     html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>';
     weekdays.forEach(function(d) {
       var used = countSamples(d.ds, a.key, a.section);
-      if (!a.days.has(d.dow)) {
-        if (used === 0) {
-          html += '<div class="wl-cell wl-na">—</div>';
-        } else {
-          // Submitted on an unscheduled day — show as over-capacity against 0
-          html += '<div class="wl-cell wl-over">'
-            + '<div class="wl-count">'+used+'<span class="wl-max">/0</span></div>'
-            + '<div class="wl-bar-wrap"><div class="wl-bar" style="width:100%"></div></div>'
-            + '</div>';
-        }
+      if (a.max === null) {
+        // No capacity limit — just show count, or — if nothing booked
+        html += used > 0
+          ? '<div class="wl-cell wl-ok"><div class="wl-count">'+used+'</div></div>'
+          : '<div class="wl-cell wl-na">—</div>';
+      } else if (!a.days.has(d.dow)) {
+        // Unscheduled day
+        html += used === 0
+          ? '<div class="wl-cell wl-na">—</div>'
+          : '<div class="wl-cell wl-over"><div class="wl-count">'+used+'<span class="wl-max">/0</span></div><div class="wl-bar-wrap"><div class="wl-bar" style="width:100%"></div></div></div>';
       } else {
         var pct = Math.min(Math.round(used / a.max * 100), 100);
         var cls = pct >= 100 ? 'wl-over' : pct >= 75 ? 'wl-warn' : 'wl-ok';
