@@ -89,6 +89,8 @@
   .assay-MassSpec   { background: #e2e8f0; color: #1e3a5f; }
   .assay-RiboEndcap { background: #ccf0e6; color: #004d30; }
   .assay-ElisaDsRNA { background: #f0e6ff; color: #5a0080; }
+  .assay-GelElectro { background: #e0e8ff; color: #2a3fa0; }
+  .assay-LipidsLCMS { background: #ffe0cc; color: #7a2800; }
 
   /* View toggle */
   .view-toggle { display: flex; background: var(--surface2); border-radius: 7px; padding: 2px; gap: 2px; }
@@ -174,9 +176,6 @@
   .assay-check input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--blue-border); cursor: pointer; flex-shrink: 0; }
   .assay-check-label { font-size: 12px; font-weight: 500; flex: 1; }
   .assay-check-sub { font-size: 10px; color: var(--text-hint); margin-top: 1px; }
-  .ee-option { margin-top: 6px; padding: 8px 10px; background: var(--teal-bg); border: 0.5px solid var(--teal-border); border-radius: 7px; display: none; }
-  .ee-option.show { display: flex; align-items: center; gap: 8px; }
-  .ee-option label { font-size: 12px; color: var(--teal-text); font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
   .btn { padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border-med); background: var(--surface); color: var(--text); transition: background 0.1s; }
   .btn:hover { background: var(--surface2); }
@@ -301,7 +300,6 @@
   .op-Xu-Anqi     { background: #e8f0fd; border-left-color: #283593 !important; }
 
   /* EE-only assay tag */
-  .assay-EEOnly { background: #fff3cd; color: #7b4f00; }
   /* Site badges */
   .site-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; letter-spacing: 0.4px; white-space: nowrap; }
   .site-badge.SD { background: var(--blue-bg); color: var(--blue-text); border: 1px solid #b3d1f0; }
@@ -643,9 +641,6 @@
             <div class="form-row">
               <label>Assays Requested *</label>
               <div class="assay-grid" id="assay-grid"></div>
-              <div class="ee-option" id="ee-option">
-                <label><input type="checkbox" id="f-ee-only"> %EE Only (Encapsulation Efficiency, no total RNA)</label>
-              </div>
             </div>
             <div class="form-grid2">
               <!-- DP: LNP Stage | DS: DS Stage -->
@@ -754,46 +749,50 @@ function validateEntry({ date, samples, operator }) {
    Constants
    --------------------------------------------- */
 const ASSAYS = [
-  { key:'ribogreen',  label:'Ribogreen',      sub:'RNA quantification' },
-  { key:'riboendcap', label:'RG Encap Only',  sub:'Ribogreen encapsulation only' },
-  { key:'bca',        label:'BCA',            sub:'Protein quantification' },
-  { key:'cemrna',     label:'CE mRNA',        sub:'Capillary electrophoresis' },
-  { key:'fa',         label:'FA',             sub:'Formulation analysis' },
-  { key:'hplclipids', label:'HPLC Lipids',   sub:'Lipid profiling' },
-  { key:'hplcab',     label:'HPLC Ab',        sub:'Antibody analysis' },
-  { key:'od280',      label:'OD280',          sub:'Protein UV absorbance' },
-  { key:'tns',        label:'TNS',            sub:'Zeta potential / charge' },
-  { key:'massspec',   label:'Mass Spec',      sub:'Mass spectrometry (MS)' },
-  { key:'elisadsrna', label:'Elisa dsRNA',    sub:'Double-stranded RNA ELISA' },
+  { key:'ribogreen',   label:'Ribogreen',        sub:'RNA quantification' },
+  { key:'riboendcap',  label:'RG Encap Only',    sub:'Ribogreen encapsulation only' },
+  { key:'bca',         label:'BCA',              sub:'Protein quantification' },
+  { key:'cemrna',      label:'CE mRNA',          sub:'Capillary electrophoresis' },
+  { key:'fa',          label:'FA',               sub:'Formulation analysis' },
+  { key:'hplclipids',  label:'HPLC Lipids',      sub:'Lipid profiling' },
+  { key:'hplcab',      label:'HPLC Ab',          sub:'Antibody analysis' },
+  { key:'od280',       label:'OD280',            sub:'Protein UV absorbance' },
+  { key:'tns',         label:'TNS',              sub:'Zeta potential / charge' },
+  { key:'massspec',    label:'Mass Spec',        sub:'Mass spectrometry (MS)' },
+  { key:'gelelectro',  label:'Gel Electrophoresis (Ab)', sub:'Gel electrophoresis antibody' },
+  { key:'lipidslcms',  label:'Lipids LCMS',      sub:'Lipids LC-MS analysis' },
 ];
 const ASSAY_COLORS = {
-  ribogreen:'assay-Ribogreen', bca:'assay-BCA', cemrna:'assay-CE-mRNA',
-  fa:'assay-FA', hplclipids:'assay-HPLC-Lipids', hplcab:'assay-HPLC-Ab',
-  od280:'assay-OD280', tns:'assay-TNS', massspec:'assay-MassSpec',
-  riboendcap:'assay-RiboEndcap', elisadsrna:'assay-ElisaDsRNA'
+  ribogreen:'assay-Ribogreen',   bca:'assay-BCA',           cemrna:'assay-CE-mRNA',
+  fa:'assay-FA',                 hplclipids:'assay-HPLC-Lipids', hplcab:'assay-HPLC-Ab',
+  od280:'assay-OD280',           tns:'assay-TNS',           massspec:'assay-MassSpec',
+  riboendcap:'assay-RiboEndcap', gelelectro:'assay-GelElectro', lipidslcms:'assay-LipidsLCMS'
 };
 const DS_ASSAYS = [
-  { key:'dotplot', label:'Dot Plot',  sub:'Particle visualization' },
-  { key:'iprp',    label:'IP RP',     sub:'Ion-pair reversed phase' },
-  { key:'dsfa',    label:'FA',        sub:'Formulation analysis' },
-  { key:'od260',   label:'OD260',     sub:'RNA UV absorbance' },
-  { key:'dscemrna',label:'CE mRNA',   sub:'Capillary electrophoresis' },
-  { key:'polya',   label:'Poly A',    sub:'Poly-A tail analysis' },
-  { key:'fivecap', label:"5' Cap",    sub:'5-prime cap analysis' },
+  { key:'dotplot',    label:'Dot Plot',          sub:'Particle visualization' },
+  { key:'iprp',       label:'IP RP',             sub:'Ion-pair reversed phase' },
+  { key:'dsfa',       label:'FA',                sub:'Formulation analysis' },
+  { key:'od260',      label:'OD260',             sub:'RNA UV absorbance' },
+  { key:'dscemrna',   label:'CE mRNA',           sub:'Capillary electrophoresis' },
+  { key:'ribomrna',   label:'Ribo (Total)',  sub:'mRNA concentration by Ribogreen' },
+  { key:'elisadsrna', label:'Elisa dsRNA',       sub:'Double-stranded RNA ELISA' },
+  { key:'polya',      label:'Poly A',            sub:'Poly-A tail analysis' },
+  { key:'fivecap',    label:"5' Cap",            sub:'5-prime cap analysis' },
 ];
 const DS_ASSAY_COLORS = {
-  dotplot:'assay-DotPlot', iprp:'assay-IPRP', dsfa:'assay-FA',
-  od260:'assay-OD260', dscemrna:'assay-CE-mRNA', polya:'assay-PolyA', fivecap:'assay-FiveCap'
+  dotplot:'assay-DotPlot', iprp:'assay-IPRP',        dsfa:'assay-FA',
+  od260:'assay-OD260',     dscemrna:'assay-CE-mRNA', polya:'assay-PolyA',
+  fivecap:'assay-FiveCap', ribomrna:'assay-Ribogreen', elisadsrna:'assay-ElisaDsRNA'
 };
 const DS_STAGES = ['IP DS','UF/DF DS','BLK DS','F/T DS'];
 
 /* Assays available to run each day of the week (0=Sun … 6=Sat) */
 const DAILY_ASSAYS = {
-  1: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'TNS',    cls:'assay-TNS'         }],
-  2: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'Lipids', cls:'assay-HPLC-Lipids' }, { label:'TNS', cls:'assay-TNS' }, { label:"5'Cap", cls:'assay-FiveCap' }, { label:'PolyA', cls:'assay-PolyA' }],
-  3: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'BCA',    cls:'assay-BCA'         }],
-  4: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'Lipids', cls:'assay-HPLC-Lipids' }],
-  5: [{ label:'RG',    cls:'assay-Ribogreen'   }, { label:'ENCAP',  cls:'assay-RiboEndcap'  }, { label:'CE',     cls:'assay-CE-mRNA'     }, { label:'BCA',    cls:'assay-BCA'         }, { label:'TNS', cls:'assay-TNS' }],
+  1: [{ label:'RG', cls:'assay-Ribogreen' }, { label:'ENCAP', cls:'assay-RiboEndcap' }, { label:'CE', cls:'assay-CE-mRNA' }, { label:'TNS', cls:'assay-TNS' }, { label:'Gel', cls:'assay-GelElectro' }, { label:'CE·m', cls:'assay-CE-mRNA' }],
+  2: [{ label:'RG', cls:'assay-Ribogreen' }, { label:'ENCAP', cls:'assay-RiboEndcap' }, { label:'Lipids', cls:'assay-HPLC-Lipids' }, { label:'TNS', cls:'assay-TNS' }, { label:'Gel', cls:'assay-GelElectro' }, { label:"5'Cap", cls:'assay-FiveCap' }, { label:'PolyA', cls:'assay-PolyA' }],
+  3: [{ label:'RG', cls:'assay-Ribogreen' }, { label:'ENCAP', cls:'assay-RiboEndcap' }, { label:'BCA', cls:'assay-BCA' }, { label:'CE·m', cls:'assay-CE-mRNA' }, { label:'Ribo·m', cls:'assay-Ribogreen' }],
+  4: [{ label:'RG', cls:'assay-Ribogreen' }, { label:'ENCAP', cls:'assay-RiboEndcap' }, { label:'Lipids', cls:'assay-HPLC-Lipids' }, { label:'Elisa', cls:'assay-ElisaDsRNA' }],
+  5: [{ label:'RG', cls:'assay-Ribogreen' }, { label:'ENCAP', cls:'assay-RiboEndcap' }, { label:'BCA', cls:'assay-BCA' }, { label:'TNS', cls:'assay-TNS' }, { label:'LCMS', cls:'assay-LipidsLCMS' }, { label:'CE·m', cls:'assay-CE-mRNA' }, { label:'Ribo·m', cls:'assay-Ribogreen' }],
 };
 function getDayAssaysHtml(dayOfWeek) {
   const assays = DAILY_ASSAYS[dayOfWeek];
@@ -801,17 +800,24 @@ function getDayAssaysHtml(dayOfWeek) {
   return assays.map(a => `<span class="day-assay-tag ${a.cls}">${a.label}</span>`).join('');
 }
 
-/* Max samples per assay per day — drives the workload tracker */
+/* Max samples per assay per day — drives the workload tracker.
+   section: 'dp' = DP submissions; 'mrna' = DS/mRNA submissions (submissiontype==='ds') */
 const ASSAY_CAPACITY = [
-  { key:'ribogreen',  label:'Ribo Total',  cls:'assay-Ribogreen',   days:new Set([1,2,3,4,5]), max:20 },
-  { key:'riboendcap', label:'RG Encap Only', cls:'assay-RiboEndcap', days:new Set([1,2,3,4,5]), max:20 },
-  { key:'hplclipids', label:'Lipids',      cls:'assay-HPLC-Lipids', days:new Set([2,4]),        max:15 },
-  { key:'cemrna',     label:'CE',          cls:'assay-CE-mRNA',     days:new Set([1,3,5]),      max:10 },
-  { key:'bca',        label:'BCA',         cls:'assay-BCA',         days:new Set([3,5]),        max:40 },
-  { key:'tns',        label:'TNS',         cls:'assay-TNS',         days:new Set([1,2,5]),      max:8  },
-  { key:'fivecap',    label:"5' Cap",      cls:'assay-FiveCap',     days:new Set([2]),          max:10 },
-  { key:'polya',      label:'Poly A',      cls:'assay-PolyA',       days:new Set([2]),          max:10 },
-  { key:'elisadsrna', label:'Elisa dsRNA', cls:'assay-ElisaDsRNA',  days:new Set([1,2,3,4,5]), max:80 },
+  // ── Drug Product ──
+  { key:'ribogreen',  label:'Ribo Total',       cls:'assay-Ribogreen',   section:'dp',   days:new Set([1,2,3,4,5]), max:20 },
+  { key:'riboendcap', label:'RG Encap Only',    cls:'assay-RiboEndcap',  section:'dp',   days:new Set([1,2,3,4,5]), max:20 },
+  { key:'hplclipids', label:'HPLC Lipids',              cls:'assay-HPLC-Lipids', section:'dp',   days:new Set([2,4]),        max:15 },
+  { key:'cemrna',     label:'CE mRNA',                  cls:'assay-CE-mRNA',     section:'dp',   days:new Set([1]),          max:10 },
+  { key:'bca',        label:'BCA',                      cls:'assay-BCA',         section:'dp',   days:new Set([3,5]),        max:40 },
+  { key:'tns',        label:'TNS',                      cls:'assay-TNS',         section:'dp',   days:new Set([1,2,5]),      max:8  },
+  { key:'gelelectro', label:'Gel Electrophoresis (Ab)', cls:'assay-GelElectro',  section:'dp',   days:new Set([1,2]),        max:20 },
+  { key:'lipidslcms', label:'Lipids LCMS',              cls:'assay-LipidsLCMS',  section:'dp',   days:new Set([5]),          max:10 },
+  // ── mRNA ──
+  { key:'dscemrna',   label:'CE mRNA',                  cls:'assay-CE-mRNA',     section:'mrna', days:new Set([1,3,5]),      max:20 },
+  { key:'ribomrna',   label:'Ribo (Total)',              cls:'assay-Ribogreen',   section:'mrna', days:new Set([3,5]),        max:40 },
+  { key:'elisadsrna', label:'Elisa dsRNA',      cls:'assay-ElisaDsRNA',  section:'mrna', days:new Set([4]),          max:80 },
+  { key:'fivecap',    label:"5' Cap",           cls:'assay-FiveCap',     section:'mrna', days:new Set([2]),          max:10 },
+  { key:'polya',      label:'Poly A',           cls:'assay-PolyA',       section:'mrna', days:new Set([2]),          max:10 },
 ];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1134,7 +1140,6 @@ function renderWeekCalendar() {
       var div = document.createElement('div');
       div.className = 'week-entry op-'+e.operator.replace(/\s+/g,'-');
       var tags = ASSAYS.filter(function(a){ return e.assays&&e.assays[a.key]; }).map(function(a) {
-        if (a.key==='ribogreen' && e.assays.eeonly) return '<span class="week-entry-assay-tag assay-EEOnly">%EE Only</span>';
         return '<span class="week-entry-assay-tag '+esc(ASSAY_COLORS[a.key])+'">'+esc(a.label)+'</span>';
       }).join('');
       var tl = e.team==='production'?'Form':e.team==='mrna'?'mRNA':'Anal';
@@ -1214,31 +1219,45 @@ function renderWorkload() {
   }
   var weekdays = allDays.slice(1, 6); // Mon–Fri only
 
-  function countSamples(ds, key) {
-    return data.filter(function(e){ return e.date===ds && e.assays && e.assays[key]; })
-               .reduce(function(s,e){ return s+(parseInt(e.samples)||0); }, 0);
+  function countSamples(ds, key, section) {
+    return data.filter(function(e) {
+      if (e.date !== ds || !e.assays || !e.assays[key]) return false;
+      if (section === 'mrna') return e.submissiontype === 'ds';
+      if (section === 'dp')   return (e.submissiontype || 'dp') === 'dp';
+      return true;
+    }).reduce(function(s,e){ return s+(parseInt(e.samples)||0); }, 0);
+  }
+
+  function sectionRow(label) {
+    return '<div style="grid-column:1/-1;background:var(--surface2);border-bottom:0.5px solid var(--border);font-size:10px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.5px;padding:5px 10px;">'
+      + label + '</div>';
   }
 
   var html = '<div class="wl-table">';
 
-  // Header row — Sun slot = blank label header, Sat slot = empty
+  // Header row
   html += '<div class="wl-row">';
-  html += '<div class="wl-label-cell"></div>'; // Sun slot
+  html += '<div class="wl-label-cell"></div>';
   weekdays.forEach(function(d) {
     html += '<div class="wl-day-hdr">'+DAYS[d.date.getDay()]+'<br><span style="font-size:9px;font-weight:400;">'+MOS[d.date.getMonth()]+' '+d.date.getDate()+'</span></div>';
   });
-  html += '<div class="wl-cell wl-na"></div>'; // Sat slot
+  html += '<div class="wl-cell wl-na"></div>';
   html += '</div>';
 
-  // Assay rows — label in Sun slot, Mon–Fri data, empty Sat slot
+  // Assay rows with section dividers
+  var lastSection = null;
   ASSAY_CAPACITY.forEach(function(a) {
+    if (a.section !== lastSection) {
+      lastSection = a.section;
+      html += sectionRow(a.section === 'dp' ? '💊 Drug Product' : '🧬 mRNA');
+    }
     html += '<div class="wl-row">';
-    html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>'; // Sun slot
+    html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>';
     weekdays.forEach(function(d) {
       if (!a.days.has(d.dow)) {
         html += '<div class="wl-cell wl-na">—</div>';
       } else {
-        var used = countSamples(d.ds, a.key);
+        var used = countSamples(d.ds, a.key, a.section);
         var pct  = Math.min(Math.round(used / a.max * 100), 100);
         var cls  = pct >= 100 ? 'wl-over' : pct >= 75 ? 'wl-warn' : 'wl-ok';
         html += '<div class="wl-cell '+cls+'">'
@@ -1247,7 +1266,7 @@ function renderWorkload() {
           + '</div>';
       }
     });
-    html += '<div class="wl-cell wl-na"></div>'; // Sat slot
+    html += '<div class="wl-cell wl-na"></div>';
     html += '</div>';
   });
 
@@ -1272,8 +1291,7 @@ function buildWeekAssaySummary(entries, assayList, colorMap) {
   active.forEach(function(a) {
     var val = assaySamples[a.key];
     var pct = Math.round(val / maxVal * 100);
-    var hasEEOnly = a.key==='ribogreen' && entries.some(function(e){ return e.assays&&e.assays.ribogreen&&e.assays.eeonly; });
-    var labelText = (a.key==='ribogreen'&&hasEEOnly) ? 'Ribo/%EE' : a.label;
+    var labelText = a.label;
     var row = document.createElement('div');
     row.className = 'week-assay-row';
     row.innerHTML = '<span class="assay-tag '+(colorMap[a.key]||'')+'" style="font-size:8px;padding:1px 4px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(labelText)+'</span>'
@@ -1300,11 +1318,8 @@ function makeCell(date, otherMonth) {
     shown.forEach(k => {
       const a=ASSAYS.find(a=>a.key===k);
       // Check if any entry on this day has ribogreen as EE-only
-      const hasEEOnly = k==='ribogreen' && entries.some(e=>e.assays&&e.assays.ribogreen&&e.assays.eeonly);
-      const hasRibo   = k==='ribogreen' && entries.some(e=>e.assays&&e.assays.ribogreen&&!e.assays.eeonly);
       if(k==='ribogreen') {
-        if(hasRibo)   html+=`<span class="cal-pill ${esc(ASSAY_COLORS[k])}">${esc(a.label)}</span>`;
-        if(hasEEOnly) html+=`<span class="cal-pill assay-EEOnly">%EE Only</span>`;
+        html+=`<span class="cal-pill ${esc(ASSAY_COLORS[k])}">${esc(a.label)}</span>`;
       } else {
         html+=`<span class="cal-pill ${esc(ASSAY_COLORS[k])}">${esc(a.label)}</span>`;
       }
@@ -1358,7 +1373,7 @@ function openViewModal(id) {
   const viewAssayList = viewIsDS ? DS_ASSAYS : ASSAYS;
   const viewColorMap  = viewIsDS ? DS_ASSAY_COLORS : ASSAY_COLORS;
   const assayTags = viewAssayList.filter(a=>e.assays&&e.assays[a.key])
-    .map(a=>`<span class="view-assay-tag ${esc(viewColorMap[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' -- %EE Only':''}</span>`).join('');
+    .map(a=>`<span class="view-assay-tag ${esc(viewColorMap[a.key])}">${esc(a.label)}</span>`).join('');
   document.getElementById('view-modal-body').innerHTML = `
     <div class="view-hero">
       <div class="view-avatar ${esc(teamCls)}">${esc(initials)}</div>
@@ -1488,20 +1503,15 @@ function getActiveAssayColors() {
    --------------------------------------------- */
 function buildAssayGrid(type) {
   const assayList = (type || currentSubmissionType) === 'ds' ? DS_ASSAYS : ASSAYS;
-  const showEE = (type || currentSubmissionType) !== 'ds';
+
   document.getElementById('assay-grid').innerHTML = assayList.map(a=>`
     <label class="assay-check" id="check-${a.key}">
       <input type="checkbox" id="f-${a.key}" onchange="onAssayChange('${a.key}')">
       <div><div class="assay-check-label">${esc(a.label)}</div><div class="assay-check-sub">${esc(a.sub)}</div></div>
     </label>`).join('');
-  document.getElementById('ee-option').style.display = showEE ? '' : 'none';
 }
 function onAssayChange(key) {
   document.getElementById('check-'+key).classList.toggle('selected', document.getElementById('f-'+key).checked);
-  if (key === 'ribogreen') {
-    document.getElementById('ee-option').classList.toggle('show', document.getElementById('f-ribogreen').checked);
-    if (!document.getElementById('f-ribogreen').checked) document.getElementById('f-ee-only').checked = false;
-  }
 }
 function openAddModal(date) {
   editingId = null;
@@ -1524,8 +1534,6 @@ function openAddModal(date) {
   document.getElementById('f-projecttype').value = '';
   document.getElementById('f-batchid').value     = '';
   document.getElementById('f-notes').value       = '';
-  document.getElementById('f-ee-only').checked   = false;
-  document.getElementById('ee-option').classList.remove('show');
   setModalOpen(true);
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -1553,7 +1561,6 @@ function openEditModal(id) {
   onOperatorChange();
   const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
   activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
-  if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
   setModalOpen(true);
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -1587,7 +1594,6 @@ function copySubmission(id) {
   onOperatorChange();
   const activeAssayList = currentSubmissionType === 'ds' ? DS_ASSAYS : ASSAYS;
   activeAssayList.forEach(a => { const cb=document.getElementById('f-'+a.key); if(cb){cb.checked=!!(entry.assays&&entry.assays[a.key]);onAssayChange(a.key);} });
-  if (entry.assays && entry.assays.eeonly) { document.getElementById('f-ee-only').checked=true; document.getElementById('ee-option').classList.add('show'); }
   setModalOpen(true);
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('f-date').focus();
@@ -1612,7 +1618,6 @@ async function saveEntry() {
   const activeAssayList = submissiontype === 'ds' ? DS_ASSAYS : ASSAYS;
   const assays = {};
   activeAssayList.forEach(a => { assays[a.key] = document.getElementById('f-'+a.key)?.checked || false; });
-  assays.eeonly = submissiontype !== 'ds' && document.getElementById('f-ee-only').checked;
   if (!activeAssayList.some(a => assays[a.key])) { showToast('Please select at least one assay.', true); return; }
 
   const saveBtn = document.getElementById('save-btn');
@@ -1686,7 +1691,7 @@ function renderEntryCard(e, compact) {
     ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#fef6e4;color:#7a4100;font-weight:600;">DS</span>'
     : '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:var(--blue-bg);color:var(--blue-text);font-weight:600;">DP</span>';
   const assayTags = activeAssayList.filter(a=>e.assays&&e.assays[a.key])
-    .map(a=>`<span class="assay-tag ${esc(activeColorMap[a.key])}">${esc(a.label)}${a.key==='ribogreen'&&e.assays.eeonly?' (%EE)':''}</span>`).join('');
+    .map(a=>`<span class="assay-tag ${esc(activeColorMap[a.key])}">${esc(a.label)}</span>`).join('');
   const stageMeta = isDS ? esc(e.dsstage||'') : esc(e.lnpstage||'');
   const metaParts = [stageMeta, esc(e.projecttype||''), esc(e.batchid||'')].filter(Boolean).join(' | ');
   const notesPart = e.notes ? `<div class="sub-notes" style="margin-top:2px;">"${esc(e.notes)}"</div>` : '';
