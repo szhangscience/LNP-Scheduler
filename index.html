@@ -91,6 +91,7 @@
   .assay-ElisaDsRNA { background: #f0e6ff; color: #5a0080; }
   .assay-GelElectro { background: #e0e8ff; color: #2a3fa0; }
   .assay-LipidsLCMS { background: #ffe0cc; color: #7a2800; }
+  .assay-nFCM       { background: #d4f1ff; color: #004d70; }
 
   /* View toggle */
   .view-toggle { display: flex; background: var(--surface2); border-radius: 7px; padding: 2px; gap: 2px; }
@@ -764,12 +765,14 @@ const ASSAYS = [
   { key:'massspec',    label:'Mass Spec',        sub:'Mass spectrometry (MS)' },
   { key:'gelelectro',  label:'Gel Electrophoresis (Ab)', sub:'Gel electrophoresis antibody' },
   { key:'lipidslcms',  label:'Lipids LCMS',      sub:'Lipids LC-MS analysis' },
+  { key:'nfcm',        label:'nFCM',             sub:'nanoFCM particle analysis' },
 ];
 const ASSAY_COLORS = {
   ribogreen:'assay-Ribogreen',   bca:'assay-BCA',           cemrna:'assay-CE-mRNA',
   fa:'assay-FA',                 hplclipids:'assay-HPLC-Lipids', hplcab:'assay-HPLC-Ab',
   od280:'assay-OD280',           tns:'assay-TNS',           massspec:'assay-MassSpec',
-  riboendcap:'assay-RiboEndcap', gelelectro:'assay-GelElectro', lipidslcms:'assay-LipidsLCMS'
+  riboendcap:'assay-RiboEndcap', gelelectro:'assay-GelElectro', lipidslcms:'assay-LipidsLCMS',
+  nfcm:'assay-nFCM'
 };
 const DS_ASSAYS = [
   { key:'dotplot',    label:'Dot Plot',          sub:'Particle visualization' },
