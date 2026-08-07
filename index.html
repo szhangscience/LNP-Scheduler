@@ -664,10 +664,13 @@
                 <label>DS Stage <span class="label-optional">(optional)</span></label>
                 <select id="f-dsstage">
                   <option value="">-- Select --</option>
-                  <option value="IP DS">IP DS</option>
-                  <option value="UF/DF DS">UF/DF DS</option>
-                  <option value="BLK DS">BLK DS</option>
-                  <option value="F/T DS">F/T DS</option>
+                  <option value="IVT">IVT</option>
+                  <option value="Oligo-DT">Oligo-DT</option>
+                  <option value="SDVB">SDVB</option>
+                  <option value="Avitide">Avitide</option>
+                  <option value="2nd Oligo-dT">2nd Oligo-dT</option>
+                  <option value="TFF">TFF</option>
+                  <option value="BDS">BDS</option>
                 </select>
               </div>
               <div class="form-row">
@@ -784,7 +787,7 @@ const DS_ASSAY_COLORS = {
   od260:'assay-OD260',     dscemrna:'assay-CE-mRNA', polya:'assay-PolyA',
   fivecap:'assay-FiveCap', ribomrna:'assay-Ribogreen', elisadsrna:'assay-ElisaDsRNA'
 };
-const DS_STAGES = ['IP DS','UF/DF DS','BLK DS','F/T DS'];
+const DS_STAGES = ['IVT','Oligo-DT','SDVB','Avitide','2nd Oligo-dT','TFF','BDS'];
 
 /* Assays available to run each day of the week (0=Sun … 6=Sat) */
 const DAILY_ASSAYS = {
