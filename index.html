@@ -1489,6 +1489,8 @@ function goToFormStep() {
   document.getElementById('save-btn').style.display = '';
   document.getElementById('back-btn').style.display = '';
   applySubmissionType(currentSubmissionType);
+  // Auto-fill team based on submission type
+  document.getElementById('f-team').value = currentSubmissionType === 'ds' ? 'mrna' : 'production';
 }
 
 function goBackToTypeStep() {
