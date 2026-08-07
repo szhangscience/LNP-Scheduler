@@ -804,31 +804,28 @@ function getDayAssaysHtml(dayOfWeek) {
 }
 
 /* Max samples per assay per day — drives the workload tracker.
-   section: 'dp' = DP submissions; 'mrna' = DS/mRNA submissions (submissiontype==='ds') */
+   keys: array of assay keys to sum across (covers both DP and DS variants).
+   max: combined capacity (sum of DP + DS limits); null = no defined limit. */
 const ASSAY_CAPACITY = [
-  // ── Drug Product ──
-  { key:'ribogreen',  label:'Ribo Total',              cls:'assay-Ribogreen',   section:'dp',   days:new Set([1,2,3,4,5]), max:20   },
-  { key:'riboendcap', label:'RG Encap Only',           cls:'assay-RiboEndcap',  section:'dp',   days:new Set([1,2,3,4,5]), max:20   },
-  { key:'hplclipids', label:'HPLC Lipids',             cls:'assay-HPLC-Lipids', section:'dp',   days:new Set([2,4]),        max:15   },
-  { key:'cemrna',     label:'CE mRNA',                 cls:'assay-CE-mRNA',     section:'dp',   days:new Set([1]),          max:10   },
-  { key:'bca',        label:'BCA',                     cls:'assay-BCA',         section:'dp',   days:new Set([3,5]),        max:40   },
-  { key:'tns',        label:'TNS',                     cls:'assay-TNS',         section:'dp',   days:new Set([1,2,5]),      max:8    },
-  { key:'gelelectro', label:'Gel Electrophoresis (Ab)',cls:'assay-GelElectro',  section:'dp',   days:new Set([1,2]),        max:20   },
-  { key:'lipidslcms', label:'Lipids LCMS',             cls:'assay-LipidsLCMS',  section:'dp',   days:new Set([5]),          max:10   },
-  { key:'fa',         label:'FA',                      cls:'assay-FA',          section:'dp',   days:new Set([1,2,3,4,5]), max:null },
-  { key:'hplcab',     label:'HPLC Ab',                 cls:'assay-HPLC-Ab',     section:'dp',   days:new Set([1,2,3,4,5]), max:null },
-  { key:'od280',      label:'OD280',                   cls:'assay-OD280',       section:'dp',   days:new Set([1,2,3,4,5]), max:null },
-  { key:'massspec',   label:'Mass Spec',               cls:'assay-MassSpec',    section:'dp',   days:new Set([1,2,3,4,5]), max:null },
-  // ── mRNA ──
-  { key:'dscemrna',   label:'CE mRNA',                 cls:'assay-CE-mRNA',     section:'mrna', days:new Set([1,3,5]),      max:20   },
-  { key:'ribomrna',   label:'Ribo (Total)',             cls:'assay-Ribogreen',   section:'mrna', days:new Set([3,5]),        max:40   },
-  { key:'elisadsrna', label:'Elisa dsRNA',             cls:'assay-ElisaDsRNA',  section:'mrna', days:new Set([4]),          max:80   },
-  { key:'fivecap',    label:"5' Cap",                  cls:'assay-FiveCap',     section:'mrna', days:new Set([2]),          max:10   },
-  { key:'polya',      label:'Poly A',                  cls:'assay-PolyA',       section:'mrna', days:new Set([2]),          max:10   },
-  { key:'dotplot',    label:'Dot Plot',                cls:'assay-DotPlot',     section:'mrna', days:new Set([1,2,3,4,5]), max:null },
-  { key:'iprp',       label:'IP RP',                   cls:'assay-IPRP',        section:'mrna', days:new Set([1,2,3,4,5]), max:null },
-  { key:'dsfa',       label:'FA',                      cls:'assay-FA',          section:'mrna', days:new Set([1,2,3,4,5]), max:null },
-  { key:'od260',      label:'OD260',                   cls:'assay-OD260',       section:'mrna', days:new Set([1,2,3,4,5]), max:null },
+  { keys:['ribogreen'],           label:'Ribo Total',              cls:'assay-Ribogreen',   days:new Set([1,2,3,4,5]), max:20   },
+  { keys:['riboendcap'],          label:'RG Encap Only',           cls:'assay-RiboEndcap',  days:new Set([1,2,3,4,5]), max:20   },
+  { keys:['hplclipids'],          label:'HPLC Lipids',             cls:'assay-HPLC-Lipids', days:new Set([2,4]),        max:15   },
+  { keys:['cemrna','dscemrna'],   label:'CE mRNA',                 cls:'assay-CE-mRNA',     days:new Set([1,3,5]),      max:30   },
+  { keys:['bca'],                 label:'BCA',                     cls:'assay-BCA',         days:new Set([3,5]),        max:40   },
+  { keys:['tns'],                 label:'TNS',                     cls:'assay-TNS',         days:new Set([1,2,5]),      max:8    },
+  { keys:['gelelectro'],          label:'Gel Electrophoresis (Ab)',cls:'assay-GelElectro',  days:new Set([1,2]),        max:20   },
+  { keys:['lipidslcms'],          label:'Lipids LCMS',             cls:'assay-LipidsLCMS',  days:new Set([5]),          max:10   },
+  { keys:['ribomrna'],            label:'Ribo (Total) mRNA',       cls:'assay-Ribogreen',   days:new Set([3,5]),        max:40   },
+  { keys:['elisadsrna'],          label:'Elisa dsRNA',             cls:'assay-ElisaDsRNA',  days:new Set([4]),          max:80   },
+  { keys:['fivecap'],             label:"5' Cap",                  cls:'assay-FiveCap',     days:new Set([2]),          max:10   },
+  { keys:['polya'],               label:'Poly A',                  cls:'assay-PolyA',       days:new Set([2]),          max:10   },
+  { keys:['fa','dsfa'],           label:'FA',                      cls:'assay-FA',          days:new Set([1,2,3,4,5]), max:null },
+  { keys:['hplcab'],              label:'HPLC Ab',                 cls:'assay-HPLC-Ab',     days:new Set([1,2,3,4,5]), max:null },
+  { keys:['od280'],               label:'OD280',                   cls:'assay-OD280',       days:new Set([1,2,3,4,5]), max:null },
+  { keys:['massspec'],            label:'Mass Spec',               cls:'assay-MassSpec',    days:new Set([1,2,3,4,5]), max:null },
+  { keys:['dotplot'],             label:'Dot Plot',                cls:'assay-DotPlot',     days:new Set([1,2,3,4,5]), max:null },
+  { keys:['iprp'],                label:'IP RP',                   cls:'assay-IPRP',        days:new Set([1,2,3,4,5]), max:null },
+  { keys:['od260'],               label:'OD260',                   cls:'assay-OD260',       days:new Set([1,2,3,4,5]), max:null },
 ];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1230,18 +1227,12 @@ function renderWorkload() {
   }
   var weekdays = allDays.slice(1, 6); // Mon–Fri only
 
-  function countSamples(ds, key, section) {
+  // Count samples for any of the listed keys across all submission types
+  function countSamples(ds, keys) {
     return data.filter(function(e) {
-      if (e.date !== ds || !e.assays || !e.assays[key]) return false;
-      if (section === 'mrna') return e.submissiontype === 'ds';
-      if (section === 'dp')   return (e.submissiontype || 'dp') === 'dp';
-      return true;
+      if (e.date !== ds || !e.assays) return false;
+      return keys.some(function(k){ return e.assays[k]; });
     }).reduce(function(s,e){ return s+(parseInt(e.samples)||0); }, 0);
-  }
-
-  function sectionRow(label) {
-    return '<div style="grid-column:1/-1;background:var(--surface2);border-bottom:0.5px solid var(--border);font-size:10px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.5px;padding:5px 10px;">'
-      + label + '</div>';
   }
 
   var html = '<div class="wl-table">';
@@ -1255,17 +1246,12 @@ function renderWorkload() {
   html += '<div class="wl-cell wl-na"></div>';
   html += '</div>';
 
-  // Assay rows with section dividers
-  var lastSection = null;
+  // Assay rows — combined (no DP/mRNA section dividers)
   ASSAY_CAPACITY.forEach(function(a) {
-    if (a.section !== lastSection) {
-      lastSection = a.section;
-      html += sectionRow(a.section === 'dp' ? '💊 Drug Product' : '🧬 mRNA');
-    }
     html += '<div class="wl-row">';
     html += '<div class="wl-label-cell"><span class="assay-tag '+a.cls+'" style="font-size:10px;padding:2px 6px;">'+a.label+'</span></div>';
     weekdays.forEach(function(d) {
-      var used = countSamples(d.ds, a.key, a.section);
+      var used = countSamples(d.ds, a.keys);
       if (a.max === null) {
         // No capacity limit — just show count, or — if nothing booked
         html += used > 0
